@@ -1,0 +1,201 @@
+#!/usr/bin/env python
+
+import sys, os, json, time
+from argparse import ArgumentParser
+
+######################
+# internal functions
+######################
+
+# location of json file
+bcsfilename = os.path.expanduser('~/.breadcrumbs')
+
+# check against list of known/allowed keys
+# type is not used as a key, because not guaranteed to be unique
+def bcs_check_key(key):
+    bcskeys = set(["num","dir","date","label"])
+    if key not in bcskeys:
+        raise ValueError("No key '"+key+"'")    
+
+# check if dir arg is number or label
+def bcs_num_or_label(args):
+    key = None
+    if args.dir is not None:
+        if args.dir.isdigit():
+            args.dir = int(args.dir)
+        key = "num" if type(args.dir) is int else "label"
+    return key
+        
+# make dict sorted by value for specified key
+def bcs_list_sort(bcslist,key):
+    bcs_check_key(key)
+    bcsdict = {}
+    for bcsitem in bcslist:
+        bcsdict[bcsitem[key]] = bcsitem
+    return bcsdict
+    
+# resort a dict (or sort by num)
+def bcs_dict_sort(bcsdict,key):
+    bcs_check_key(key)
+    if key=="num":
+        counter = 0
+        bcsdict = bcs_dict_sort(bcsdict,"date")
+        for bcskey in sorted(bcsdict,reverse=True): # todo: allow reverse sort? (oldest first)
+            bcsdict[counter] = bcsdict.pop(bcskey)
+            counter += 1
+    else:
+        bcsdict = { bcsdict[bcskey][key] : bcsval for bcskey,bcsval in bcsdict.iteritems() }
+    
+    return bcsdict
+
+# load dict from file and sort
+def bcs_dict_load(key="num"):
+    bcs_check_key(key)
+    
+    with open(bcsfilename,'r') as bcsfile:
+        bcslist = json.load(bcsfile)
+    
+    # num is a derived key, based on date ordering
+    do_num = False
+    if key=="num":
+        key = "date"
+        do_num = True
+    
+    bcsdict = bcs_list_sort(bcslist,key)
+        
+    # replace date w/ num as key
+    if do_num:
+        bcsdict = bcs_dict_sort(bcsdict,"num")
+        
+    return bcsdict
+
+# output dict to file
+def bcs_dict_dump(bcsdict):
+    # convert dict back to list
+    bcslist = [bcsitem[1] for bcsitem in bcsdict.iteritems()]
+    with open(bcsfilename,'w') as bcsfile:
+        json.dump(bcslist, bcsfile)
+
+######################
+# external functions
+######################
+
+def bcs_add(args):
+    bcsdict = bcs_dict_load()
+    # ensure labels are unique
+    if args.label is not None:
+        bcsdict = bcs_dict_sort(bcsdict,"label")
+        if args.label in bcsdict:
+            if not args.force:
+                raise RuntimeError("Label "+args.label+" already in use (use -f to override)")
+            else:
+                # reset label to default value
+                bcsdict[args.label]["label"] = bcsdict[args.label]["dir"]
+    # add or update label
+    if args.dir is not None and args.dir.isdigit():
+        num = int(args.dir)
+        bcsdict = bcs_dict_sort(bcsdict,"num")
+        if num in bcsdict:
+            if args.label is not None:
+                bcsdict[num]["label"] = args.label
+            if args.type is not None:
+                bcsdict[num]["type"] = args.type
+            bcs_dict_dump(bcsdict)
+        else:
+            raise ValueError("No item "+str(args.num))
+    # add or update entire entry
+    else:
+        # use pwd by default
+        if args.dir is None:
+            args.dir = os.getcwd()
+        bcsdict = bcs_dict_sort(bcsdict,"dir")
+        bcsdict[args.dir] = {
+            "dir": args.dir,
+            "label": args.label if args.label is not None else args.dir,
+            "type": args.type if args.type is not None else "",
+            "date": time.time(),
+        }
+        bcs_dict_dump(bcsdict)
+
+def bcs_list(args):
+    # for specific dir, only print name: used for "go" functionality
+    if args.dir is not None:
+        key = bcs_num_or_label(args)
+        bcsdict = bcs_dict_load(key)
+        print(bcsdict[args.dir]["dir"])
+    # default: print all, w/ format (long):
+    # N: dir    (date    label   type)
+    else:
+        bcsdict = bcs_dict_load("num")
+        for bcskey in sorted(bcsdict):
+            line = str(bcskey)+": "+bcsdict[bcskey]["dir"]
+            if args.long:
+                ilabel = bcsdict[bcskey]["label"]
+                if not ilabel or ilabel==bcsdict[bcskey]["dir"]:
+                    ilabel = '""'
+                itype = bcsdict[bcskey]["type"]
+                if not itype:
+                    itype = '""'
+                line += "\t"+time.ctime(bcsdict[bcskey]["date"])+"\t"+ilabel+"\t"+itype
+            print(line)
+    
+def bcs_rm(args):
+    # remove by num or label
+    if args.dir is not None:
+        key = bcs_num_or_label(args)
+        bcsdict = bcs_dict_load(key)
+        if args.dir in bcsdict:
+            bcsdict.pop(args.dir)
+        bcs_dict_dump(bcsdict)
+    # remove many by type
+    elif args.type:
+        bcsdict = bcs_dict_load("num")
+        for bcskey in bcsdict:
+            if bcsdict[bcskey]["type"]==args.type:
+                bcsdict.pop(bcskey)
+        bcs_dict_dump(bcsdict)
+    # remove all (clear)
+    # todo: backup file by default?
+    elif args.all:
+        with open(bcsfilename,'w') as bcsfile:
+            bcsfile.write('[]')
+
+######################
+# main function
+######################
+
+def bcs(argv=None):
+    if argv is None: argv = sys.argv[1:]
+    
+    # top-level parser
+    parser = ArgumentParser()
+    subparsers = parser.add_subparsers()
+    
+    # parser for add
+    parser_add = subparsers.add_parser("add")
+    parser_add.add_argument("dir", metavar="dir", type=str, nargs='?', help="name of directory to add (if not pwd) or # of directory to update")
+    parser_add.add_argument("-l", "--label", dest="label", type=str, help="label for directory to add/update (optional)")
+    parser_add.add_argument("-t", "--type", dest="type", type=str, help="type for directory to add/update (optional)")
+    parser_add.add_argument("-f", "--force", dest="force", action="store_true", help="force update of already-used label")
+    parser_add.set_defaults(func=bcs_add)
+
+    # parser for list
+    parser_list = subparsers.add_parser("list")
+    parser_list.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to list (lists all by default)")
+    parser_list.add_argument("-l", "--long", dest="long", action="store_true", help="use long listing (dates, labels, types)")
+    parser_list.set_defaults(func=bcs_list)
+
+    # parser for rm
+    parser_rm = subparsers.add_parser("rm")
+    group_rm = parser_rm.add_mutually_exclusive_group(required=True)
+    group_rm.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to remove from list")
+    group_rm.add_argument("-t", "--type", dest="type", type=str, help="remove all of specified type")
+    group_rm.add_argument("-a", "--all", dest="all", action="store_true", help="remove all")
+    parser_rm.set_defaults(func=bcs_rm)
+
+    # parse and run
+    args = parser.parse_args(args=argv)
+    args.func(args)
+
+if __name__ == "__main__":
+    bcs()
