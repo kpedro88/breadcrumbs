@@ -55,14 +55,14 @@ cd ..
 rm -rf bcstmp
 
 # check if already set up
-if grep "bcsgo" $LOGONFILE; then
+if grep "bcsgo" $LOGONFILE > /dev/null 2>&1; then
 	exit 0
 fi
 
 # setup alias/function
 if [[ $MYSHELL == *csh ]]; then
 	$ECHO "" >> $LOGONFILE
-	$ECHO "alias bcsgo 'cd "'"`bcs list !$`"'"'" >> $LOGONFILE
+	$ECHO "alias bcsgo 'cd "'"`bcs list \!$`"'"'" >> $LOGONFILE
 else
 	$ECHO "" >> $LOGONFILE
 	$ECHO "bcsgo() {" >> $LOGONFILE
