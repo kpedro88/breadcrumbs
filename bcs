@@ -48,9 +48,17 @@ def bcs_dict_sort(bcsdict,key):
     
     return bcsdict
 
+# in case file doesn't exist or needs to be reset
+def bcs_create_default_file():
+    with open(bcsfilename,'w') as bcsfile:
+        bcsfile.write('[]')
+    
 # load dict from file and sort
 def bcs_dict_load(key="num"):
     bcs_check_key(key)
+    
+    if not os.path.isfile(bcsfilename):
+        bcs_create_default_file()
     
     with open(bcsfilename,'r') as bcsfile:
         bcslist = json.load(bcsfile)
@@ -157,8 +165,7 @@ def bcs_rm(args):
     # remove all (clear)
     # todo: backup file by default?
     elif args.all:
-        with open(bcsfilename,'w') as bcsfile:
-            bcsfile.write('[]')
+        bcs_create_default_file()
 
 ######################
 # main function
