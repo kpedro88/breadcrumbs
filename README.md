@@ -56,7 +56,7 @@ optional arguments:
   -h, --help                 show this help message and exit
   -l LABEL, --label LABEL    label for directory to add/update (optional)
   -t TYPE, --type TYPE       type for directory to add/update (optional)
-  -f, --force                force update of already-used label
+  -f, --force                force update of already-used label or directory
 ```
 
 `bcs list`:
