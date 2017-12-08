@@ -20,6 +20,7 @@ Installation script options:
 ```
 -d          installation directory (required)
 -f          logon file to install alias (default = ~/.bashrc or ~/.cshrc)
+-a          alias name (default = bcsgo)
 -v          version of bcs to install (default = master)
 -s          shell (default = $SHELL)
 ```
@@ -93,3 +94,4 @@ positional arguments:
   dir                        # or label of directory to cd
 ```
 Due to shell limitations, `bcsgo` is implemented as an alias for tcsh and a function for bash.
+The alias/function can be renamed by the installation script; one shorter example is `bcd`.
