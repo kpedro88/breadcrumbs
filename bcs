@@ -156,16 +156,15 @@ def bcs_list(args):
                      '""' if not bcsval["label"] or bcsval["label"]==bcsval["dir"] else bcsval["label"],
                      '""' if not bcsval["type"] else bcsval["type"]] for bcskey,bcsval in sorted(bcsdict.iteritems())]
         # transpose to find max length for each column
-        bcsdict_cols = [[row[i] for row in bcsdict_rows] for i in range(5)]
-        column_lengths = [max(len(item) for item in col) for col in bcsdict_cols]
-        for ibcs in range(len(bcsdict_rows)):
+        column_lengths = [max(len(row[i]) for row in bcsdict_rows) for i in range(5)]
+        for row in bcsdict_rows:
             line = ""
-            line += "{0:>{1}}:".format(bcsdict_cols[0][ibcs],column_lengths[0])
-            line += " {0:<{1}}".format(bcsdict_cols[1][ibcs],column_lengths[1])
+            line += "{0:>{1}}:".format(row[0],column_lengths[0])
+            line += " {0:<{1}}".format(row[1],column_lengths[1])
             if args.long:
-                line += "  {0:<{1}}".format(bcsdict_cols[2][ibcs],column_lengths[2])
-                line += "  {0:<{1}}".format(bcsdict_cols[3][ibcs],column_lengths[3])
-                line += "  {0:<{1}}".format(bcsdict_cols[4][ibcs],column_lengths[4])
+                line += "  {0:<{1}}".format(row[2],column_lengths[2])
+                line += "  {0:<{1}}".format(row[3],column_lengths[3])
+                line += "  {0:<{1}}".format(row[4],column_lengths[4])
             print(line)
     
 def bcs_rm(args):
