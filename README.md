@@ -78,7 +78,7 @@ optional arguments:
 usage: bcs rm [-h] [-t TYPE] [-a] [dir]
 
 positional arguments:
-  dir                        # or label of directory to remove from list
+  dir                        #(s) or label(s) of directory(s) to remove from list
 
 optional arguments:
   -h, --help                 show this help message and exit

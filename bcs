@@ -21,9 +21,20 @@ def bcs_check_key(key):
 def bcs_num_or_label(args):
     key = None
     if args.dir is not None:
-        if args.dir.isdigit():
-            args.dir = int(args.dir)
-        key = "num" if type(args.dir) is int else "label"
+        if isinstance(args.dir,list):
+            if all(d.isdigit() for d in args.dir):
+                args.dir = [int(d) for d in args.dir]
+                key = "num"
+            elif all(not d.isdigit() for d in args.dir):
+                key = "label"
+            else:
+                raise ValueError("Can't mix num and label in list of dirs: "+','.join(args.dir))
+        else:
+            if args.dir.isdigit():
+                args.dir = int(args.dir)
+                key = "num"
+            else:
+                key = "label"
     return key
         
 # make dict sorted by value for specified key
@@ -153,10 +164,13 @@ def bcs_list(args):
 def bcs_rm(args):
     # remove by num or label
     if args.dir is not None:
+        if not isinstance(args.dir,list):
+            args.dir = [args.dir]
         key = bcs_num_or_label(args)
         bcsdict = bcs_dict_load(key)
-        if args.dir in bcsdict:
-            bcsdict.pop(args.dir)
+        for d in args.dir:
+            if d in bcsdict:
+                bcsdict.pop(d)
         bcs_dict_dump(bcsdict)
     # remove many by type
     elif args.type:
@@ -198,7 +212,7 @@ def bcs(argv=None):
     # parser for rm
     parser_rm = subparsers.add_parser("rm")
     group_rm = parser_rm.add_mutually_exclusive_group(required=True)
-    group_rm.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to remove from list")
+    group_rm.add_argument("dir", metavar="dir", type=str, nargs='*', help="#(s) or label(s) of directory(s) to remove from list", default=[])
     group_rm.add_argument("-t", "--type", dest="type", type=str, help="remove all of specified type")
     group_rm.add_argument("-a", "--all", dest="all", action="store_true", help="remove all")
     parser_rm.set_defaults(func=bcs_rm)
