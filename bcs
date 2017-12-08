@@ -149,16 +149,23 @@ def bcs_list(args):
     # N: dir    (date    label   type)
     else:
         bcsdict = bcs_dict_load("num")
-        for bcskey in sorted(bcsdict):
-            line = str(bcskey)+": "+bcsdict[bcskey]["dir"]
+        # make copy w/ printable values in order
+        bcsdict_rows = [[str(bcskey),
+                     bcsval["dir"],
+                     time.ctime(bcsval["date"]),
+                     '""' if not bcsval["label"] or bcsval["label"]==bcsval["dir"] else bcsval["label"],
+                     '""' if not bcsval["type"] else bcsval["type"]] for bcskey,bcsval in sorted(bcsdict.iteritems())]
+        # transpose to find max length for each column
+        bcsdict_cols = [[row[i] for row in bcsdict_rows] for i in range(5)]
+        column_lengths = [max(len(item) for item in col) for col in bcsdict_cols]
+        for ibcs in range(len(bcsdict_rows)):
+            line = ""
+            line += "{0:>{1}}:".format(bcsdict_cols[0][ibcs],column_lengths[0])
+            line += " {0:<{1}}".format(bcsdict_cols[1][ibcs],column_lengths[1])
             if args.long:
-                ilabel = bcsdict[bcskey]["label"]
-                if not ilabel or ilabel==bcsdict[bcskey]["dir"]:
-                    ilabel = '""'
-                itype = bcsdict[bcskey]["type"]
-                if not itype:
-                    itype = '""'
-                line += "\t"+time.ctime(bcsdict[bcskey]["date"])+"\t"+ilabel+"\t"+itype
+                line += "  {0:<{1}}".format(bcsdict_cols[2][ibcs],column_lengths[2])
+                line += "  {0:<{1}}".format(bcsdict_cols[3][ibcs],column_lengths[3])
+                line += "  {0:<{1}}".format(bcsdict_cols[4][ibcs],column_lengths[4])
             print(line)
     
 def bcs_rm(args):
