@@ -162,6 +162,8 @@ def bcs_list(args):
             for bcskey in bcsdict.keys():
                 if os.path.isdir(bcsdict[bcskey]["dir"]):
                     bcsdict.pop(bcskey)
+            if len(bcsdict)==0:
+                return
         # make copy w/ printable values in order
         bcsdict_rows = [[str(bcskey),
                      bcsval["dir"],
