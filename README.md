@@ -47,17 +47,30 @@ the automatic numbering in the list.
 
 `bcs add`:
 ```
- bcs add --help
 usage: bcs add [-h] [-l LABEL] [-t TYPE] [-f] [dir]
 
 positional arguments:
-  dir                        name of directory to add (if not pwd) or # of directory to update
+  dir                        name of directory to add (if not pwd)
 
 optional arguments:
   -h, --help                 show this help message and exit
-  -l LABEL, --label LABEL    label for directory to add/update (optional)
-  -t TYPE, --type TYPE       type for directory to add/update (optional)
+  -l LABEL, --label LABEL    label for directory to add (optional)
+  -t TYPE, --type TYPE       type for directory to add (optional)
   -f, --force                force update of already-used label or directory
+```
+
+`bcs set`:
+```
+usage: bcs set [-h] [-l LABEL] [-t TYPE] [-f] [dir]
+
+positional arguments:
+  dir                        # or label of directory to update
+
+optional arguments:
+  -h, --help                 show this help message and exit
+  -l LABEL, --label LABEL    label for directory to update (optional)
+  -t TYPE, --type TYPE       type for directory to update (optional)
+  -f, --force                force update of already-used label
 ```
 
 `bcs list`:

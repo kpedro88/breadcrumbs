@@ -63,7 +63,7 @@ def bcs_dict_sort(bcsdict,key):
 def bcs_create_default_file():
     with open(bcsfilename,'w') as bcsfile:
         bcsfile.write('[]')
-    
+
 # load dict from file and sort
 def bcs_dict_load(key="num"):
     bcs_check_key(key)
@@ -88,6 +88,15 @@ def bcs_dict_load(key="num"):
         
     return bcsdict
 
+def bcs_check_label(bcsdict,label,force):
+    bcsdict = bcs_dict_sort(bcsdict,"label")
+    if label in bcsdict:
+        if not force:
+            raise RuntimeError("Label "+label+" already in use (use -f to override)")
+        else:
+            # reset label to default value
+            bcsdict[label]["label"] = bcsdict[label]["dir"]            
+
 # output dict to file
 def bcs_dict_dump(bcsdict):
     # convert dict back to list
@@ -103,41 +112,40 @@ def bcs_add(args):
     bcsdict = bcs_dict_load()
     # ensure labels are unique
     if args.label is not None:
-        bcsdict = bcs_dict_sort(bcsdict,"label")
-        if args.label in bcsdict:
-            if not args.force:
-                raise RuntimeError("Label "+args.label+" already in use (use -f to override)")
-            else:
-                # reset label to default value
-                bcsdict[args.label]["label"] = bcsdict[args.label]["dir"]
-    # add or update label
-    if args.dir is not None and args.dir.isdigit():
-        num = int(args.dir)
-        bcsdict = bcs_dict_sort(bcsdict,"num")
-        if num in bcsdict:
-            if args.label is not None:
-                bcsdict[num]["label"] = args.label
-            if args.type is not None:
-                bcsdict[num]["type"] = args.type
-            bcs_dict_dump(bcsdict)
-        else:
-            raise ValueError("No item "+str(args.num))
-    # add or update entire entry
-    else:
-        # use pwd by default
-        if args.dir is None:
-            args.dir = os.getcwd()
-        bcsdict = bcs_dict_sort(bcsdict,"dir")
-        if args.dir in bcsdict and not args.force:
-            print("Dir "+args.dir+" already in bcs, not updating without -f")
-            return
-        bcsdict[args.dir] = {
-            "dir": args.dir,
-            "label": args.label if args.label is not None else args.dir,
-            "type": args.type if args.type is not None else "",
-            "date": time.time(),
-        }
+        bcs_check_label(bcsdict,args.label,args.force)
+    # add entry (use pwd by default)
+    if args.dir is None:
+        args.dir = os.getcwd()
+    bcsdict = bcs_dict_sort(bcsdict,"dir")
+    if args.dir in bcsdict and not args.force:
+        print("Dir "+args.dir+" already in bcs, not updating without -f")
+        return
+    bcsdict[args.dir] = {
+        "dir": args.dir,
+        "label": args.label if args.label is not None else args.dir,
+        "type": args.type if args.type is not None else "",
+        "date": time.time(),
+    }
+    bcs_dict_dump(bcsdict)
+
+def bcs_set(args):
+    if args.dir is None:
+        raise ValueError("Must specify # or label of directory")
+    bcsdict = bcs_dict_load()
+    # ensure labels are unique
+    if args.label is not None:
+        bcs_check_label(bcsdict,args.label,args.force)
+    # update label and/or type
+    key = bcs_num_or_label(args)
+    bcsdict = bcs_dict_sort(key)
+    if args.dir in bcsdict:
+        if args.label is not None:
+            bcsdict[num]["label"] = args.label
+        if args.type is not None:
+            bcsdict[num]["type"] = args.type
         bcs_dict_dump(bcsdict)
+    else:
+        raise ValueError("No item "+str(args.num))
 
 def bcs_list(args):
     # for specific dir, only print name: used for "go" functionality
@@ -213,11 +221,19 @@ def bcs(argv=None):
     
     # parser for add
     parser_add = subparsers.add_parser("add")
-    parser_add.add_argument("dir", metavar="dir", type=str, nargs='?', help="name of directory to add (if not pwd) or # of directory to update")
-    parser_add.add_argument("-l", "--label", dest="label", type=str, help="label for directory to add/update (optional)")
-    parser_add.add_argument("-t", "--type", dest="type", type=str, help="type for directory to add/update (optional)")
+    parser_add.add_argument("dir", metavar="dir", type=str, nargs='?', help="name of directory to add (if not pwd)")
+    parser_add.add_argument("-l", "--label", dest="label", type=str, help="label for directory to add (optional)")
+    parser_add.add_argument("-t", "--type", dest="type", type=str, help="type for directory to add (optional)")
     parser_add.add_argument("-f", "--force", dest="force", action="store_true", help="force update of already-used label or directory")
     parser_add.set_defaults(func=bcs_add)
+
+    # parser for set
+    parser_set = subparsers.add_parser("set")
+    parser_set.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to update")
+    parser_set.add_argument("-l", "--label", dest="label", type=str, help="label for directory to update (optional)")
+    parser_set.add_argument("-t", "--type", dest="type", type=str, help="type for directory to update (optional)")
+    parser_set.add_argument("-f", "--force", dest="force", action="store_true", help="force update of already-used label")
+    parser_set.set_defaults(func=bcs_set)
 
     # parser for list
     parser_list = subparsers.add_parser("list")
