@@ -137,15 +137,15 @@ def bcs_set(args):
         bcs_check_label(bcsdict,args.label,args.force)
     # update label and/or type
     key = bcs_num_or_label(args)
-    bcsdict = bcs_dict_sort(key)
+    bcsdict = bcs_dict_sort(bcsdict,key)
     if args.dir in bcsdict:
         if args.label is not None:
-            bcsdict[num]["label"] = args.label
+            bcsdict[args.dir]["label"] = args.label
         if args.type is not None:
-            bcsdict[num]["type"] = args.type
+            bcsdict[args.dir]["type"] = args.type
         bcs_dict_dump(bcsdict)
     else:
-        raise ValueError("No item "+str(args.num))
+        raise ValueError("No item "+str(args.dir))
 
 def bcs_list(args):
     # for specific dir, only print name: used for "go" functionality
