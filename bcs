@@ -169,7 +169,7 @@ def bcs_list(args):
     
 def bcs_rm(args):
     # remove by num or label
-    if args.dir is not None:
+    if len(args.dir)>0:
         if not isinstance(args.dir,list):
             args.dir = [args.dir]
         key = bcs_num_or_label(args)
@@ -178,12 +178,17 @@ def bcs_rm(args):
             if d in bcsdict:
                 bcsdict.pop(d)
         bcs_dict_dump(bcsdict)
-    # remove many by type
-    elif args.type:
+    # remove many by type, or any nonexistent
+    elif args.type or args.nonexistent:
         bcsdict = bcs_dict_load("num")
-        for bcskey in bcsdict:
-            if bcsdict[bcskey]["type"]==args.type:
-                bcsdict.pop(bcskey)
+        for bcskey in bcsdict.keys():
+            bcsval = bcsdict[bcskey]
+            if args.type:
+                if bcsval["type"]==args.type:
+                    bcsdict.pop(bcskey)
+            elif args.nonexistent:
+                if not os.path.isdir(bcsval["dir"]):
+                    bcsdict.pop(bcskey)
         bcs_dict_dump(bcsdict)
     # remove all (clear)
     # todo: backup file by default?
@@ -220,6 +225,7 @@ def bcs(argv=None):
     group_rm = parser_rm.add_mutually_exclusive_group(required=True)
     group_rm.add_argument("dir", metavar="dir", type=str, nargs='*', help="#(s) or label(s) of directory(s) to remove from list", default=[])
     group_rm.add_argument("-t", "--type", dest="type", type=str, help="remove all of specified type")
+    group_rm.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="remove nonexistent directories")
     group_rm.add_argument("-a", "--all", dest="all", action="store_true", help="remove all")
     parser_rm.set_defaults(func=bcs_rm)
 

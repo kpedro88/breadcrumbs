@@ -83,6 +83,7 @@ positional arguments:
 optional arguments:
   -h, --help                 show this help message and exit
   -t TYPE, --type TYPE       remove all of specified type
+  -n, --nonexistent          remove nonexistent directories
   -a, --all                  remove all
 ```
 
