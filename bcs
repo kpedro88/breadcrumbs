@@ -149,6 +149,11 @@ def bcs_list(args):
     # N: dir    (date    label   type)
     else:
         bcsdict = bcs_dict_load("num")
+        # if only listing nonexistent dirs, remove existent dirs from dict first
+        if args.nonexistent:
+            for bcskey in bcsdict.keys():
+                if os.path.isdir(bcsdict[bcskey]["dir"]):
+                    bcsdict.pop(bcskey)
         # make copy w/ printable values in order
         bcsdict_rows = [[str(bcskey),
                      bcsval["dir"],
@@ -218,6 +223,7 @@ def bcs(argv=None):
     parser_list = subparsers.add_parser("list")
     parser_list.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to list (lists all by default)")
     parser_list.add_argument("-l", "--long", dest="long", action="store_true", help="use long listing (dates, labels, types)")
+    parser_list.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="list only nonexistent directories")
     parser_list.set_defaults(func=bcs_list)
 
     # parser for rm

@@ -70,7 +70,7 @@ positional arguments:
 optional arguments:
   -h, --help                 show this help message and exit
   -l, --long                 use long listing (dates, labels, types)
-
+  -n, --nonexistent          list only nonexistent directories
 ```
 
 `bcs rm`:
