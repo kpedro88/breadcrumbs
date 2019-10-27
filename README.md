@@ -71,8 +71,9 @@ optional arguments:
   -h, --help                 show this help message and exit
   -l LABEL, --label LABEL    label for directory to add (optional)
   -t TYPE, --type TYPE       type for directory to add (optional)
+  -e ENV, --env ENV          env command for directory to add (optional)
   -f, --force                force update of already-used label or directory
-  -b, --backup          make backup before changes
+  -b, --backup               make backup before changes
 ```
 
 `bcs set`:
@@ -86,8 +87,9 @@ optional arguments:
   -h, --help                 show this help message and exit
   -l LABEL, --label LABEL    label for directory to update (optional)
   -t TYPE, --type TYPE       type for directory to update (optional)
+  -e ENV, --env ENV          env command for directory to update (optional)
   -f, --force                force update of already-used label
-  -b, --backup          make backup before changes
+  -b, --backup               make backup before changes
 ```
 
 `bcs list`:
@@ -99,6 +101,7 @@ positional arguments:
 
 optional arguments:
   -h, --help                 show this help message and exit
+  -a, --all                  list all properties for directory
   -l, --long                 use long listing (dates, labels, types)
   -n, --nonexistent          list only nonexistent directories
 ```
@@ -115,7 +118,7 @@ optional arguments:
   -t TYPE, --type TYPE       remove all of specified type
   -n, --nonexistent          remove nonexistent directories
   -a, --all                  remove all
-  -b, --backup          make backup before changes
+  -b, --backup               make backup before changes
 ```
 
 `bcs update`: used at installation for compatibility with schema changes

@@ -117,6 +117,13 @@ def bcs_dict_dump(bcsdict):
     with open(bcsfilename,'w') as bcsfile:
         json.dump(bcslist, bcsfile)
 
+# string representations of properties
+def bcs_repr(bcsitem, prop):
+    if prop=="dir" or prop=="env": return bcsitem[prop]
+    elif prop=="date": return time.ctime(bcsitem[prop])
+    elif prop=="label": return '""' if not bcsitem[prop] or bcsitem[prop]==bcsitem["dir"] else bcsitem[prop]
+    elif prop=="type": return '""' if not bcsitem["type"] else bcsitem["type"]
+
 ######################
 # external functions
 ######################
@@ -141,6 +148,7 @@ def bcs_add(args):
         "label": args.label if args.label is not None else args.dir,
         "type": args.type if args.type is not None else "",
         "date": time.time(),
+        "env": args.env if args.env is not None else "",
     }
     bcs_dict_dump(bcsdict)
 
@@ -162,6 +170,8 @@ def bcs_set(args):
             bcsdict[args.dir]["label"] = args.label
         if args.type is not None:
             bcsdict[args.dir]["type"] = args.type
+        if args.env is not None:
+            bcsdict[args.dir]["env"] = args.env
         bcs_dict_dump(bcsdict)
     else:
         raise ValueError("No item "+str(args.dir))
@@ -171,7 +181,14 @@ def bcs_list(args):
     if args.dir is not None:
         key = bcs_num_or_label(args)
         bcsdict = bcs_dict_load(key)
-        print(bcsdict[args.dir]["dir"])
+        bcsitem = bcsdict[args.dir]
+        if args.all:
+            line = ""
+            for prop in sorted(bcsitem.keys()):
+                line += prop+": "+bcs_repr(bcsitem,prop)+"\n"
+            print line
+        else:
+            print(bcsitem["dir"])
     # default: print all, w/ format (long):
     # N: dir    (date    label   type)
     else:
@@ -185,10 +202,10 @@ def bcs_list(args):
                 return
         # make copy w/ printable values in order
         bcsdict_rows = [[str(bcskey),
-                     bcsval["dir"],
-                     time.ctime(bcsval["date"]),
-                     '""' if not bcsval["label"] or bcsval["label"]==bcsval["dir"] else bcsval["label"],
-                     '""' if not bcsval["type"] else bcsval["type"]] for bcskey,bcsval in sorted(bcsdict.iteritems())]
+                    bcs_repr(bcsval,"dir"),
+                    bcs_repr(bcsval,"date"),
+                    bcs_repr(bcsval,"label"),
+                    bcs_repr(bcsval,"type")] for bcskey,bcsval in sorted(bcsdict.iteritems())]
         # transpose to find max length for each column
         column_lengths = [max(len(row[i]) for row in bcsdict_rows) for i in range(5)]
         for row in bcsdict_rows:
@@ -262,6 +279,7 @@ def bcs(argv=None):
     parser_add.add_argument("dir", metavar="dir", type=str, nargs='?', help="name of directory to add (if not pwd)")
     parser_add.add_argument("-l", "--label", dest="label", type=str, help="label for directory to add (optional)")
     parser_add.add_argument("-t", "--type", dest="type", type=str, help="type for directory to add (optional)")
+    parser_add.add_argument("-e", "--env", dest="env", type=str, help="env command for directory to add (optional)")
     parser_add.add_argument("-f", "--force", dest="force", action="store_true", help="force update of already-used label or directory")
     parser_add.set_defaults(func=bcs_add)
 
@@ -270,12 +288,14 @@ def bcs(argv=None):
     parser_set.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to update")
     parser_set.add_argument("-l", "--label", dest="label", type=str, help="label for directory to update (optional)")
     parser_set.add_argument("-t", "--type", dest="type", type=str, help="type for directory to update (optional)")
+    parser_set.add_argument("-e", "--env", dest="env", type=str, help="env command for directory to update (optional)")
     parser_set.add_argument("-f", "--force", dest="force", action="store_true", help="force update of already-used label")
     parser_set.set_defaults(func=bcs_set)
 
     # parser for list
     parser_list = subparsers.add_parser("list")
     parser_list.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to list (lists all by default)")
+    parser_list.add_argument("-a", "--all", dest="all", action="store_true", help="list all properties for directory")
     parser_list.add_argument("-l", "--long", dest="long", action="store_true", help="use long listing (dates, labels, types)")
     parser_list.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="list only nonexistent directories")
     parser_list.set_defaults(func=bcs_list)
