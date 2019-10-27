@@ -232,6 +232,20 @@ def bcs_rm(args):
     elif args.all:
         bcs_create_default_file()
 
+def bcs_update(args):
+    # check backup first
+    if args.backup:
+        bcs_create_backup_file()
+    bcsdict = bcs_dict_load()
+    new_properties = {
+        "env": "",
+    }
+    for bcskey in bcsdict.keys():
+        for prop in new_properties:
+            if prop not in bcsdict[bcskey]:
+                bcsdict[bcskey][prop] = new_properties[prop]
+    bcs_dict_dump(bcsdict)
+
 ######################
 # main function
 ######################
@@ -275,8 +289,12 @@ def bcs(argv=None):
     group_rm.add_argument("-a", "--all", dest="all", action="store_true", help="remove all")
     parser_rm.set_defaults(func=bcs_rm)
 
+    # parser for update
+    parser_update = subparsers.add_parser("update")
+    parser_update.set_defaults(func=bcs_update)
+
     # all modifying operations can make a backup
-    for subp in [parser_add,parser_set,parser_rm]:
+    for subp in [parser_add,parser_set,parser_rm,parser_update]:
         subp.add_argument("-b", "--backup", dest="backup", action="store_true", help="make backup before changes")
 
     # parse and run

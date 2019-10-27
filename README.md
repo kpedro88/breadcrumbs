@@ -118,6 +118,15 @@ optional arguments:
   -b, --backup          make backup before changes
 ```
 
+`bcs update`: used at installation for compatibility with schema changes
+```
+usage: bcs update [-h] [-b]
+
+optional arguments:
+  -h, --help    show this help message and exit
+  -b, --backup  make backup before changes
+```
+
 `bcsgo`: (no space)
 ```
 usage: bcsgo [dir]

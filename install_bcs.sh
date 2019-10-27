@@ -53,6 +53,11 @@ cd bcstmp
 # download program
 git clone https://github.com/kpedro88/breadcrumbs.git $VERSION
 
+# ensure compatibility (w/ backup)
+if [ -f ~/.breadcrumbs ]; then
+	breadcrumbs/bcs update -b
+fi
+
 # install program
 mv breadcrumbs/bcs $INSTALLDIR
 cd ..
