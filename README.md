@@ -72,6 +72,7 @@ optional arguments:
   -l LABEL, --label LABEL    label for directory to add (optional)
   -t TYPE, --type TYPE       type for directory to add (optional)
   -f, --force                force update of already-used label or directory
+  -b, --backup          make backup before changes
 ```
 
 `bcs set`:
@@ -86,6 +87,7 @@ optional arguments:
   -l LABEL, --label LABEL    label for directory to update (optional)
   -t TYPE, --type TYPE       type for directory to update (optional)
   -f, --force                force update of already-used label
+  -b, --backup          make backup before changes
 ```
 
 `bcs list`:
@@ -113,6 +115,7 @@ optional arguments:
   -t TYPE, --type TYPE       remove all of specified type
   -n, --nonexistent          remove nonexistent directories
   -a, --all                  remove all
+  -b, --backup          make backup before changes
 ```
 
 `bcsgo`: (no space)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, json, time
+import sys, os, json, time, glob, shutil
 from argparse import ArgumentParser
 
 ######################
@@ -64,6 +64,19 @@ def bcs_create_default_file():
     with open(bcsfilename,'w') as bcsfile:
         bcsfile.write('[]')
 
+# create backup without overwriting
+# .breadcrumbs.bak is the latest backup
+def bcs_create_backup_file():
+    bakname = '.breadcrumbs.bak'
+    bakfilename = os.path.expanduser('~/'+bakname)
+    backups = glob.glob(bakfilename+'*')
+    # move old backup to .breadcrumbs.bakN
+    if bakfilename in backups:
+        counter = len(backups)
+        shutil.copy2(bakfilename,bakfilename+str(counter))
+    # actually make the backup
+    shutil.copy2(bcsfilename,bakfilename)
+
 # load dict from file and sort
 def bcs_dict_load(key="num"):
     bcs_check_key(key)
@@ -109,6 +122,9 @@ def bcs_dict_dump(bcsdict):
 ######################
 
 def bcs_add(args):
+    # check backup first
+    if args.backup:
+        bcs_create_backup_file()
     bcsdict = bcs_dict_load()
     # ensure labels are unique
     if args.label is not None:
@@ -131,6 +147,9 @@ def bcs_add(args):
 def bcs_set(args):
     if args.dir is None:
         raise ValueError("Must specify # or label of directory")
+    # check backup first
+    if args.backup:
+        bcs_create_backup_file()
     bcsdict = bcs_dict_load()
     # ensure labels are unique
     if args.label is not None:
@@ -183,6 +202,9 @@ def bcs_list(args):
             print(line)
     
 def bcs_rm(args):
+    # check backup first
+    if args.backup:
+        bcs_create_backup_file()
     # remove by num or label
     if len(args.dir)>0:
         if not isinstance(args.dir,list):
@@ -252,6 +274,10 @@ def bcs(argv=None):
     group_rm.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="remove nonexistent directories")
     group_rm.add_argument("-a", "--all", dest="all", action="store_true", help="remove all")
     parser_rm.set_defaults(func=bcs_rm)
+
+    # all modifying operations can make a backup
+    for subp in [parser_add,parser_set,parser_rm]:
+        subp.add_argument("-b", "--backup", dest="backup", action="store_true", help="make backup before changes")
 
     # parse and run
     args = parser.parse_args(args=argv)
