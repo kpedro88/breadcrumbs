@@ -43,6 +43,21 @@ One can then call `bcs list` on login to see the list of breadcrumbs.
 The unique labels can be used as keywords if the user does not want to keep track of
 the automatic numbering in the list.
 
+Examples of the above:
+
+`.login`:
+```
+bcs list -l
+```
+
+`.logout`:
+```
+if ( $PWD !~ $HOME ) then
+    source $HOME/py.csh
+    bcs add -t auto
+endif
+```
+
 ## Commands
 
 `bcs add`:
