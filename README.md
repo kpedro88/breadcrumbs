@@ -20,7 +20,8 @@ Installation script options:
 ```
 -d          installation directory (required)
 -f          logon file to install alias (default = ~/.bashrc or ~/.cshrc)
--a          alias name (default = bcsgo)
+-a          alias name for cd + env (default = bcd)
+-b          alias name for cd (default = bgo)
 -v          version of bcs to install (default = master)
 -s          shell (default = $SHELL)
 ```
@@ -121,6 +122,18 @@ optional arguments:
   -b, --backup               make backup before changes
 ```
 
+`bcs cd`: used in shell commands
+```
+usage: bcs cd [-h] [-g] [dir]
+
+positional arguments:
+  dir         # or label of directory to cd
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -g, --go    go to directory without setting env
+```
+
 `bcs update`: used at installation for compatibility with schema changes
 ```
 usage: bcs update [-h] [-b]
@@ -130,12 +143,21 @@ optional arguments:
   -b, --backup  make backup before changes
 ```
 
-`bcsgo`: (no space)
+`bcd`: (cd and set env)
 ```
-usage: bcsgo [dir]
+usage: bcd [dir]
 
 positional arguments:
   dir                        # or label of directory to cd
 ```
-Due to shell limitations, `bcsgo` is implemented as an alias for tcsh and a function for bash.
-The alias/function can be renamed by the installation script; one shorter example is `bcd`.
+
+`bgo`: (cd, don't set env)
+```
+usage: bgo [dir]
+
+positional arguments:
+  dir                        # or label of directory to cd
+```
+
+Due to shell limitations, `bcd` and `bgo` are implemented as aliases for tcsh and functions for bash.
+The aliases/functions can be renamed by the installation script.

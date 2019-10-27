@@ -263,6 +263,15 @@ def bcs_update(args):
                 bcsdict[bcskey][prop] = new_properties[prop]
     bcs_dict_dump(bcsdict)
 
+def bcs_cd(args):
+    key = bcs_num_or_label(args)
+    bcsdict = bcs_dict_load(key)
+    bcsitem = bcsdict[args.dir]
+    line = 'cd '+bcsitem["dir"]
+    if not args.go and len(bcsitem["env"])>0:
+        line += " && "+bcsitem["env"]
+    print line
+
 ######################
 # main function
 ######################
@@ -308,6 +317,12 @@ def bcs(argv=None):
     group_rm.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="remove nonexistent directories")
     group_rm.add_argument("-a", "--all", dest="all", action="store_true", help="remove all")
     parser_rm.set_defaults(func=bcs_rm)
+
+    # parse for cd
+    parser_cd = subparsers.add_parser("cd")
+    parser_cd.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to cd")
+    parser_cd.add_argument("-g", "--go", dest="go", action="store_true", help="go to directory without setting env")
+    parser_cd.set_defaults(func=bcs_cd)
 
     # parser for update
     parser_update = subparsers.add_parser("update")

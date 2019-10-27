@@ -10,7 +10,8 @@ if [[ $MYSHELL == *csh ]]; then
 	LOGONFILE=~/.cshrc
 fi
 VERSION=""
-ANAME=bcsgo
+ANAME=bcd
+BNAME=bgo
 
 usage() {
 	$ECHO "install_bcs.sh [options]"
@@ -18,7 +19,8 @@ usage() {
 	$ECHO "Options:"
 	$ECHO "-d        \tinstallation directory (required)"
 	$ECHO "-f        \tlogon file to install alias (default = ${LOGONFILE})"
-	$ECHO "-a        \talias name (default = ${ANAME})"
+	$ECHO "-a        \talias name for cd + env (default = ${ANAME})"
+	$ECHO "-b        \talias name for cd (default = ${BNAME})"
 	$ECHO "-v        \tversion of bcs to install (default = master)"
 	$ECHO "-s        \tshell (default = ${MYSHELL})"
 	
@@ -26,13 +28,15 @@ usage() {
 }
 
 # check arguments
-while getopts "d:f:a:v:s:" opt; do
+while getopts "d:f:a:b:v:s:" opt; do
 	case "$opt" in
 		d) INSTALLDIR=$OPTARG
 		;;
 		f) LOGONFILE=$OPTARG
 		;;
 		a) ANAME=$OPTARG
+		;;
+		b) BNAME=$OPTARG
 		;;
 		v) VERSION="-b $OPTARG"
 		;;
@@ -71,8 +75,10 @@ fi
 # setup alias/function
 if [[ $MYSHELL == *csh ]]; then
 	$ECHO "" >> ${LOGONFILE}
-	$ECHO "alias ${ANAME} 'cd "'"`bcs list \!$`"'"'" >> ${LOGONFILE}
+	$ECHO "alias ${ANAME} 'eval "'"`bcs cd \!$`"'"'" >> ${LOGONFILE}
+	$ECHO "alias ${BNAME} 'eval "'"`bcs cd -g \!$`"'"'" >> ${LOGONFILE}
 else
 	$ECHO "" >> ${LOGONFILE}
-	$ECHO "${ANAME}() { "'cd "$(bcs list $1)"; }' >> ${LOGONFILE}
+	$ECHO "${ANAME}() { "'eval "$(bcs cd $1)"; }' >> ${LOGONFILE}
+	$ECHO "${BNAME}() { "'eval "$(bcs cd -g $1)"; }' >> ${LOGONFILE}
 fi
