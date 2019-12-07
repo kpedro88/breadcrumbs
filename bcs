@@ -15,7 +15,7 @@ bcsfilename = os.path.expanduser('~/.breadcrumbs')
 def bcs_check_key(key):
     bcskeys = set(["num","dir","date","label"])
     if key not in bcskeys:
-        raise ValueError("No key '"+key+"'")    
+        raise ValueError("No key '"+key+"'")
 
 # check if dir arg is number or label
 def bcs_num_or_label(args):
@@ -110,6 +110,23 @@ def bcs_check_label(bcsdict,label,force):
             # reset label to default value
             bcsdict[label]["label"] = bcsdict[label]["dir"]            
 
+# compute blocked dir
+def bcs_get_block(dir,block):
+    if block<0: tmp = ""
+    # trailing slash important for check_block using startswith
+    elif block==0: tmp = dir+"/"
+    else:
+        tmp = "/".join(dir.split("/")[:-block])
+        if len(tmp)==0: print("Block level too high, no block will be applied")
+        else: tmp = tmp+"/"
+    return tmp
+
+# check if this dir is blocked by any existing entry
+def bcs_check_block(bcsdict,dir):
+    # dirs cannot block themselves
+    tdir = dir+"/"
+    return any([tdir.startswith(bcsitem[1]["blocked"]) for bcsitem in bcsdict.iteritems() if bcsitem[1]["dir"]!=dir and len(bcsitem[1]["blocked"])>0])
+
 # output dict to file
 def bcs_dict_dump(bcsdict):
     # convert dict back to list
@@ -119,10 +136,11 @@ def bcs_dict_dump(bcsdict):
 
 # string representations of properties
 def bcs_repr(bcsitem, prop):
-    if prop=="dir" or prop=="env": return bcsitem[prop]
+    if prop in ["dir","env","blocked"]: return bcsitem[prop]
     elif prop=="date": return time.ctime(bcsitem[prop])
     elif prop=="label": return '""' if not bcsitem[prop] or bcsitem[prop]==bcsitem["dir"] else bcsitem[prop]
-    elif prop=="type": return '""' if not bcsitem["type"] else bcsitem["type"]
+    elif prop=="type": return '""' if not bcsitem[prop] else bcsitem[prop]
+    elif prop=="block": return str(bcsitem["block"])
 
 ######################
 # external functions
@@ -143,13 +161,20 @@ def bcs_add(args):
     if args.dir in bcsdict and not args.force:
         print("Dir "+args.dir+" already in bcs, not updating without -f")
         return
+    if bcs_check_block(bcsdict,args.dir) and not args.force:
+        print("Dir "+args.dir+" is blocked, not adding without -f")
+        return
     bcsdict[args.dir] = {
         "dir": args.dir,
         "label": args.label if args.label is not None else args.dir,
         "type": args.type if args.type is not None else "",
         "date": time.time(),
         "env": args.env if args.env is not None else "",
+        "block": args.block,
+        "blocked": bcs_get_block(args.dir, args.block),
     }
+    # check for too high block
+    if bcsdict[args.dir]["block"]>0 and len(bcsdict[args.dir]["blocked"])==0: bcsdict[args.dir]["block"] = -1
     bcs_dict_dump(bcsdict)
 
 def bcs_set(args):
@@ -172,6 +197,11 @@ def bcs_set(args):
             bcsdict[args.dir]["type"] = args.type
         if args.env is not None:
             bcsdict[args.dir]["env"] = args.env
+        if args.block is not None:
+            bcsdict[args.dir]["block"] = args.block
+            bcsdict[args.dir]["blocked"] = bcs_get_block(bcsdict[args.dir]["dir"], args.block)
+            # check for too high block
+            if bcsdict[args.dir]["block"]>0 and len(bcsdict[args.dir]["blocked"])==0: bcsdict[args.dir]["block"] = -1
         bcs_dict_dump(bcsdict)
     else:
         raise ValueError("No item "+str(args.dir))
@@ -186,7 +216,7 @@ def bcs_list(args):
             line = ""
             for prop in sorted(bcsitem.keys()):
                 line += prop+": "+bcs_repr(bcsitem,prop)+"\n"
-            print line
+            print(line[:-1])
         else:
             print(bcsitem["dir"])
     # default: print all, w/ format (long):
@@ -194,10 +224,13 @@ def bcs_list(args):
     else:
         bcsdict = bcs_dict_load("num")
         # if only listing nonexistent dirs, remove existent dirs from dict first
-        if args.nonexistent:
+        if args.nonexistent or args.blocked:
+            removed = []
             for bcskey in bcsdict.keys():
-                if os.path.isdir(bcsdict[bcskey]["dir"]):
-                    bcsdict.pop(bcskey)
+                if (args.nonexistent and os.path.isdir(bcsdict[bcskey]["dir"])) or \
+                   (args.blocked and bcs_check_block(bcsdict,bcsdict[bcskey]["dir"])):
+                    removed.append(bcskey)
+            bcsdict = dict([(bcskey,bcsval) for bcskey,bcsval in bcsdict.iteritems() if bcskey in removed])
             if len(bcsdict)==0:
                 return
         # make copy w/ printable values in order
@@ -232,17 +265,19 @@ def bcs_rm(args):
             if d in bcsdict:
                 bcsdict.pop(d)
         bcs_dict_dump(bcsdict)
-    # remove many by type, or any nonexistent
-    elif args.type or args.nonexistent:
+    # remove many by type, or any nonexistent, or any blocked
+    elif args.type or args.nonexistent or args.blocked:
         bcsdict = bcs_dict_load("num")
+        removed = []
         for bcskey in bcsdict.keys():
             bcsval = bcsdict[bcskey]
-            if args.type:
-                if bcsval["type"]==args.type:
-                    bcsdict.pop(bcskey)
-            elif args.nonexistent:
-                if not os.path.isdir(bcsval["dir"]):
-                    bcsdict.pop(bcskey)
+            if (args.type and bcsval["type"]==args.type) or \
+               (args.nonexistent and not os.path.isdir(bcsval["dir"])) or \
+               (args.blocked and bcs_check_block(bcsdict,bcsval["dir"])):
+                    removed.append(bcskey)
+        # remove all keys at once, because two dirs could block each other
+        for key in removed:
+            bcsdict.pop(key)
         bcs_dict_dump(bcsdict)
     # remove all (clear)
     # todo: backup file by default?
@@ -256,6 +291,8 @@ def bcs_update(args):
     bcsdict = bcs_dict_load()
     new_properties = {
         "env": "",
+        "block": -1,
+        "blocked": "",
     }
     for bcskey in bcsdict.keys():
         for prop in new_properties:
@@ -270,7 +307,7 @@ def bcs_cd(args):
     line = 'cd '+bcsitem["dir"]
     if not args.go and len(bcsitem["env"])>0:
         line += " && "+bcsitem["env"]
-    print line
+    print(line)
 
 ######################
 # main function
@@ -289,6 +326,7 @@ def bcs(argv=None):
     parser_add.add_argument("-l", "--label", dest="label", type=str, help="label for directory to add (optional)")
     parser_add.add_argument("-t", "--type", dest="type", type=str, help="type for directory to add (optional)")
     parser_add.add_argument("-e", "--env", dest="env", type=str, help="env command for directory to add (optional)")
+    parser_add.add_argument("-k", "--block", dest="block", type=int, default=-1, help="block level (optional)")
     parser_add.add_argument("-f", "--force", dest="force", action="store_true", help="force update of already-used label or directory")
     parser_add.set_defaults(func=bcs_add)
 
@@ -298,6 +336,7 @@ def bcs(argv=None):
     parser_set.add_argument("-l", "--label", dest="label", type=str, help="label for directory to update (optional)")
     parser_set.add_argument("-t", "--type", dest="type", type=str, help="type for directory to update (optional)")
     parser_set.add_argument("-e", "--env", dest="env", type=str, help="env command for directory to update (optional)")
+    parser_set.add_argument("-k", "--block", dest="block", type=int, help="block level (optional)")
     parser_set.add_argument("-f", "--force", dest="force", action="store_true", help="force update of already-used label")
     parser_set.set_defaults(func=bcs_set)
 
@@ -306,7 +345,9 @@ def bcs(argv=None):
     parser_list.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to list (lists all by default)")
     parser_list.add_argument("-a", "--all", dest="all", action="store_true", help="list all properties for directory")
     parser_list.add_argument("-l", "--long", dest="long", action="store_true", help="use long listing (dates, labels, types)")
-    parser_list.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="list only nonexistent directories")
+    group_list = parser_list.add_mutually_exclusive_group(required=False)
+    group_list.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="list only nonexistent directories")
+    group_list.add_argument("-k", "--blocked", dest="blocked", action="store_true", help="list only blocked directories")
     parser_list.set_defaults(func=bcs_list)
 
     # parser for rm
@@ -315,6 +356,7 @@ def bcs(argv=None):
     group_rm.add_argument("dir", metavar="dir", type=str, nargs='*', help="#(s) or label(s) of directory(s) to remove from list", default=[])
     group_rm.add_argument("-t", "--type", dest="type", type=str, help="remove all of specified type")
     group_rm.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="remove nonexistent directories")
+    group_rm.add_argument("-k", "--blocked", dest="blocked", action="store_true", help="remove blocked directories")
     group_rm.add_argument("-a", "--all", dest="all", action="store_true", help="remove all")
     parser_rm.set_defaults(func=bcs_rm)
 

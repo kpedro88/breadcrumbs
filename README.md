@@ -44,6 +44,12 @@ One can then call `bcs list` on login to see the list of breadcrumbs.
 The unique labels can be used as keywords if the user does not want to keep track of
 the automatic numbering in the list.
 
+A directory in the list can block other related directories from being added to the list.
+By default, blocking is not enabled. A directory with a block level of 0 will block any of its subdirectories.
+A higher block level will also block subdirectories of the corresponding higher-level directory.
+For example, a directory `/A/B/C/D` with a block level of 1 would block all other subdirectories of `/A/B/C`,
+while a block level of 2 would block all other subdirectories of `/A/B`.
+
 Examples of the above:
 
 `.login`:
@@ -63,7 +69,7 @@ endif
 
 `bcs add`:
 ```
-usage: bcs add [-h] [-l LABEL] [-t TYPE] [-f] [dir]
+usage: bcs add [-h] [-l LABEL] [-t TYPE] [-e ENV] [-k BLOCK] [-f] [-b] [dir]
 
 positional arguments:
   dir                        name of directory to add (if not pwd)
@@ -73,13 +79,14 @@ optional arguments:
   -l LABEL, --label LABEL    label for directory to add (optional)
   -t TYPE, --type TYPE       type for directory to add (optional)
   -e ENV, --env ENV          env command for directory to add (optional)
+  -k BLOCK, --block BLOCK    block level (optional)
   -f, --force                force update of already-used label or directory
   -b, --backup               make backup before changes
 ```
 
 `bcs set`:
 ```
-usage: bcs set [-h] [-l LABEL] [-t TYPE] [-f] [dir]
+usage: bcs set [-h] [-l LABEL] [-t TYPE] [-e ENV] [-k BLOCK] [-f] [-b] [dir]
 
 positional arguments:
   dir                        # or label of directory to update
@@ -89,13 +96,14 @@ optional arguments:
   -l LABEL, --label LABEL    label for directory to update (optional)
   -t TYPE, --type TYPE       type for directory to update (optional)
   -e ENV, --env ENV          env command for directory to update (optional)
+  -k BLOCK, --block BLOCK    block level (optional)
   -f, --force                force update of already-used label
   -b, --backup               make backup before changes
 ```
 
 `bcs list`:
 ```
-usage: bcs list [-h] [-l] [dir]
+usage: bcs list [-h] [-a] [-l] [-n | -k] [dir]
 
 positional arguments:
   dir                        # or label of directory to list (lists all by default)
@@ -105,11 +113,12 @@ optional arguments:
   -a, --all                  list all properties for directory
   -l, --long                 use long listing (dates, labels, types)
   -n, --nonexistent          list only nonexistent directories
+  -k, --blocked              list only blocked directories
 ```
 
 `bcs rm`:
 ```
-usage: bcs rm [-h] [-t TYPE] [-a] [dir]
+usage: bcs rm [-h] [-t TYPE] [-n] [-k] [-a] [-b] [dir [dir ...]]
 
 positional arguments:
   dir                        #(s) or label(s) of directory(s) to remove from list
@@ -118,6 +127,7 @@ optional arguments:
   -h, --help                 show this help message and exit
   -t TYPE, --type TYPE       remove all of specified type
   -n, --nonexistent          remove nonexistent directories
+  -k, --blocked              remove blocked directories
   -a, --all                  remove all
   -b, --backup               make backup before changes
 ```
