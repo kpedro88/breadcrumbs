@@ -227,7 +227,7 @@ def bcs_list(args):
         if args.nonexistent or args.blocked:
             removed = []
             for bcskey in bcsdict.keys():
-                if (args.nonexistent and os.path.isdir(bcsdict[bcskey]["dir"])) or \
+                if (args.nonexistent and not os.path.isdir(bcsdict[bcskey]["dir"])) or \
                    (args.blocked and bcs_check_block(bcsdict,bcsdict[bcskey]["dir"])):
                     removed.append(bcskey)
             bcsdict = dict([(bcskey,bcsval) for bcskey,bcsval in bcsdict.iteritems() if bcskey in removed])
