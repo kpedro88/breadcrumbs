@@ -57,11 +57,15 @@ Examples of the above:
 bcs list -l
 ```
 
-`.logout`:
+`.logout`: (with automatic `cmsenv` detection)
 ```
 if ( $PWD !~ $HOME ) then
-    source $HOME/py.csh
-    bcs add -t auto
+	if ( $PWD =~ *CMSSW_* ) then
+		set BCSENV='-e eval `scramv1 runtime -csh`'
+	else
+		set BCSENV=''
+	endif
+	bcs add -t auto "$BCSENV"
 endif
 ```
 
