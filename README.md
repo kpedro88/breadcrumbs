@@ -123,13 +123,14 @@ optional arguments:
 
 `bcs rm`:
 ```
-usage: bcs rm [-h] [-t TYPE] [-n] [-k] [-a] [-b] [dir [dir ...]]
+usage: bcs rm [-h] [-v] [-t TYPE] [-n] [-k] [-a] [-b] [dir [dir ...]]
 
 positional arguments:
   dir                        #(s) or label(s) of directory(s) to remove from list
 
 optional arguments:
   -h, --help                 show this help message and exit
+  -v, --verbose              print removed directory(s)
   -t TYPE, --type TYPE       remove all of specified type
   -n, --nonexistent          remove nonexistent directories
   -k, --blocked              remove blocked directories
