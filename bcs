@@ -142,6 +142,16 @@ def bcs_repr(bcsitem, prop):
     elif prop=="type": return '""' if not bcsitem[prop] else bcsitem[prop]
     elif prop=="block": return str(bcsitem["block"])
 
+def bcs_list_some(bcsdict, args):
+    removed = []
+    for bcskey in bcsdict.keys():
+        bcsval = bcsdict[bcskey]
+        if (args.type and bcsval["type"]==args.type) or \
+           (args.nonexistent and not os.path.isdir(bcsval["dir"])) or \
+           (args.blocked and bcs_check_block(bcsdict,bcsval["dir"])):
+                removed.append(bcskey)
+    return removed
+
 ######################
 # external functions
 ######################
@@ -224,12 +234,8 @@ def bcs_list(args):
     else:
         bcsdict = bcs_dict_load("num")
         # if only listing nonexistent dirs, remove existent dirs from dict first
-        if args.nonexistent or args.blocked:
-            removed = []
-            for bcskey in bcsdict.keys():
-                if (args.nonexistent and not os.path.isdir(bcsdict[bcskey]["dir"])) or \
-                   (args.blocked and bcs_check_block(bcsdict,bcsdict[bcskey]["dir"])):
-                    removed.append(bcskey)
+        if args.type or args.nonexistent or args.blocked:
+            removed = bcs_list_some(bcsdict,args)
             bcsdict = dict([(bcskey,bcsval) for bcskey,bcsval in bcsdict.iteritems() if bcskey in removed])
             if len(bcsdict)==0:
                 return
@@ -268,13 +274,7 @@ def bcs_rm(args):
     # remove many by type, or any nonexistent, or any blocked
     elif args.type or args.nonexistent or args.blocked:
         bcsdict = bcs_dict_load("num")
-        removed = []
-        for bcskey in bcsdict.keys():
-            bcsval = bcsdict[bcskey]
-            if (args.type and bcsval["type"]==args.type) or \
-               (args.nonexistent and not os.path.isdir(bcsval["dir"])) or \
-               (args.blocked and bcs_check_block(bcsdict,bcsval["dir"])):
-                    removed.append(bcskey)
+        removed = bcs_list_some(bcsdict,args)
         # remove all keys at once, because two dirs could block each other
         for key in removed:
             bcsdict.pop(key)
@@ -346,6 +346,7 @@ def bcs(argv=None):
     parser_list.add_argument("-a", "--all", dest="all", action="store_true", help="list all properties for directory")
     parser_list.add_argument("-l", "--long", dest="long", action="store_true", help="use long listing (dates, labels, types)")
     group_list = parser_list.add_mutually_exclusive_group(required=False)
+    group_list.add_argument("-t", "--type", dest="type", type=str, help="list all of specified type")
     group_list.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="list only nonexistent directories")
     group_list.add_argument("-k", "--blocked", dest="blocked", action="store_true", help="list only blocked directories")
     parser_list.set_defaults(func=bcs_list)

@@ -107,7 +107,7 @@ optional arguments:
 
 `bcs list`:
 ```
-usage: bcs list [-h] [-a] [-l] [-n | -k] [dir]
+usage: bcs list [-h] [-a] [-l] [-t TYPE | -n | -k] [dir]
 
 positional arguments:
   dir                        # or label of directory to list (lists all by default)
@@ -116,6 +116,7 @@ optional arguments:
   -h, --help                 show this help message and exit
   -a, --all                  list all properties for directory
   -l, --long                 use long listing (dates, labels, types)
+  -t TYPE, --type TYPE       list all of specified type
   -n, --nonexistent          list only nonexistent directories
   -k, --blocked              list only blocked directories
 ```
