@@ -314,7 +314,7 @@ def bcs_cd(args):
     key = bcs_num_or_label(args)
     bcsdict = bcs_dict_load(key)
     bcsitem = bcsdict[args.dir]
-    line = 'cd '+bcsitem["dir"]
+    line = 'cd "'+bcsitem["dir"]+'"'
     if not args.go and len(bcsitem["env"])>0:
         line += " && "+bcsitem["env"]
     print(line)
