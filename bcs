@@ -3,6 +3,17 @@
 import sys, os, json, time, glob, shutil
 from argparse import ArgumentParser
 
+# stolen from six
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+
+if PY3:
+    def iteritems(d, **kw):
+        return iter(d.items(**kw))
+else:
+    def iteritems(d, **kw):
+        return d.iteritems(**kw)
+
 ######################
 # internal functions
 ######################
@@ -55,7 +66,7 @@ def bcs_dict_sort(bcsdict,key):
             bcsdict[counter] = bcsdict.pop(bcskey)
             counter += 1
     else:
-        bcsdict = { bcsdict[bcskey][key] : bcsval for bcskey,bcsval in bcsdict.iteritems() }
+        bcsdict = { bcsdict[bcskey][key] : bcsval for bcskey,bcsval in iteritems(bcsdict) }
     
     return bcsdict
 
@@ -125,12 +136,12 @@ def bcs_get_block(dir,block):
 def bcs_check_block(bcsdict,dir):
     # dirs cannot block themselves
     tdir = dir+"/"
-    return any([tdir.startswith(bcsitem[1]["blocked"]) for bcsitem in bcsdict.iteritems() if bcsitem[1]["dir"]!=dir and len(bcsitem[1]["blocked"])>0])
+    return any([tdir.startswith(bcsitem[1]["blocked"]) for bcsitem in iteritems(bcsdict) if bcsitem[1]["dir"]!=dir and len(bcsitem[1]["blocked"])>0])
 
 # output dict to file
 def bcs_dict_dump(bcsdict):
     # convert dict back to list
-    bcslist = [bcsitem[1] for bcsitem in bcsdict.iteritems()]
+    bcslist = [bcsitem[1] for bcsitem in iteritems(bcsdict)]
     with open(bcsfilename,'w') as bcsfile:
         json.dump(bcslist, bcsfile)
 
@@ -150,7 +161,7 @@ def bcs_list_some(bcsdict, args):
            (args.nonexistent and not os.path.isdir(bcsval["dir"])) or \
            (args.blocked and bcs_check_block(bcsdict,bcsval["dir"])):
                 removed.append(bcskey)
-    removed_dict = dict([(bcskey,bcsval) for bcskey,bcsval in bcsdict.iteritems() if bcskey in removed])
+    removed_dict = dict([(bcskey,bcsval) for bcskey,bcsval in iteritems(bcsdict) if bcskey in removed])
     return removed_dict
 
 # print items in dict, w/ format (long):
@@ -161,7 +172,7 @@ def bcs_print_dict(bcsdict,long=False):
                 bcs_repr(bcsval,"dir"),
                 bcs_repr(bcsval,"date"),
                 bcs_repr(bcsval,"label"),
-                bcs_repr(bcsval,"type")] for bcskey,bcsval in sorted(bcsdict.iteritems())]
+                bcs_repr(bcsval,"type")] for bcskey,bcsval in sorted(iteritems(bcsdict))]
     # transpose to find max length for each column
     column_lengths = [max(len(row[i]) for row in bcsdict_rows) for i in range(5)]
     for row in bcsdict_rows:
