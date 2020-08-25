@@ -44,6 +44,10 @@ One can then call `bcs list` on login to see the list of breadcrumbs.
 The unique labels can be used as keywords if the user does not want to keep track of
 the automatic numbering in the list.
 
+When adding a directory, the environment command will be automatically populated with
+``eval `scramv1 runtime -sh``` (or `-csh`, depending on the user shell)
+if the directory name contains "CMSSW". This can be disabled using the `-E` flag.
+
 A directory in the list can block other related directories from being added to the list.
 By default, blocking is not enabled. A directory with a block level of 0 will block any of its subdirectories.
 A higher block level will also block subdirectories of the corresponding higher-level directory.
@@ -73,7 +77,7 @@ endif
 
 `bcs add`:
 ```
-usage: bcs add [-h] [-l LABEL] [-t TYPE] [-e ENV] [-k BLOCK] [-f] [-b] [dir]
+usage: bcs add [-h] [-l LABEL] [-t TYPE] [-e ENV] [-E] [-k BLOCK] [-f] [-b] [dir]
 
 positional arguments:
   dir                        name of directory to add (if not pwd)
@@ -83,6 +87,7 @@ optional arguments:
   -l LABEL, --label LABEL    label for directory to add (optional)
   -t TYPE, --type TYPE       type for directory to add (optional)
   -e ENV, --env ENV          env command for directory to add (optional)
+  -E, --no-auto-env          disable automatic env determination
   -k BLOCK, --block BLOCK    block level (optional)
   -f, --force                force update of already-used label or directory
   -b, --backup               make backup before changes

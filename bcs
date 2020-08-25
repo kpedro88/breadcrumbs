@@ -207,6 +207,12 @@ def bcs_add(args):
     if bcs_check_block(bcsdict,args.dir) and not args.force:
         print("Dir "+args.dir+" is blocked, not adding without -f")
         return
+    # automatic environment setting
+    if args.env is None and not args.no_auto_env:
+        if "CMSSW" in args.dir:
+            shell = os.environ["SHELL"]
+            shell_flag = "-csh" if "csh" in shell else "-sh"
+            args.env = "eval `scramv1 runtime {}`".format(shell_flag)
     bcsdict[args.dir] = {
         "dir": args.dir,
         "label": args.label if args.label is not None else args.dir,
@@ -347,6 +353,7 @@ def bcs(argv=None):
     parser_add.add_argument("-l", "--label", dest="label", type=str, help="label for directory to add (optional)")
     parser_add.add_argument("-t", "--type", dest="type", type=str, help="type for directory to add (optional)")
     parser_add.add_argument("-e", "--env", dest="env", type=str, help="env command for directory to add (optional)")
+    parser_add.add_argument("-E", "--no-auto-env", dest="no_auto_env", action="store_true", help="disable automatic env determination")
     parser_add.add_argument("-k", "--block", dest="block", type=int, default=-1, help="block level (optional)")
     parser_add.add_argument("-f", "--force", dest="force", action="store_true", help="force update of already-used label or directory")
     parser_add.set_defaults(func=bcs_add)
