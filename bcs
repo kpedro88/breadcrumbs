@@ -32,19 +32,29 @@ bcsfilename = os.path.expanduser('~/.breadcrumbs')
 
 # check against list of known/allowed keys
 # type is not used as a key, because not guaranteed to be unique
+# TODO: implement a better abstraction i.e. key class that handles various operations/checks
+#       (as opposed to various if statements strewn around now)
 def bcs_check_key(key):
-    bcskeys = set(["num","dir","date","label"])
+    bcskeys = set(["num","rnum","dir","date","label"])
     if key not in bcskeys:
         raise ValueError("No key '"+key+"'")
 
 # check if dir arg is number or label
+# TODO: allow mixing num, rnum, label in list of dirs
 def bcs_num_or_label(args):
     key = None
     if args.dir is not None:
         if isinstance(args.dir,list):
             if all(d.isdigit() for d in args.dir):
                 args.dir = [int(d) for d in args.dir]
-                key = "num"
+                all_neg = all(d<0 for d in args.dir)
+                all_pos = all(d>=0 for d in args.dir)
+                if all_pos:
+                    key = "num"
+                elif all_neg:
+                    key = "rnum"
+                else:
+                    raise ValueError("Can't mix pos and neg indices in list of dirs: "+','.join(args.dir))
             elif all(not d.isdigit() for d in args.dir):
                 key = "label"
             else:
@@ -52,7 +62,10 @@ def bcs_num_or_label(args):
         else:
             if args.dir.isdigit():
                 args.dir = int(args.dir)
-                key = "num"
+                if args.dir<0:
+                    key = "rnum"
+                else:
+                    key = "num"
             else:
                 key = "label"
     return key
@@ -68,12 +81,12 @@ def bcs_list_sort(bcslist,key):
 # resort a dict (or sort by num)
 def bcs_dict_sort(bcsdict,key):
     bcs_check_key(key)
-    if key=="num":
-        counter = 0
+    if key.endswith("num"):
+        counter = 0 if key=="num" else -1
         bcsdict = bcs_dict_sort(bcsdict,"date")
-        for bcskey in sorted(bcsdict,reverse=True): # todo: allow reverse sort? (oldest first)
+        for bcskey in sorted(bcsdict,reverse=(key=="num")):
             bcsdict[counter] = bcsdict.pop(bcskey)
-            counter += 1
+            counter += 1 if key=="num" else -1
     else:
         bcsdict = { bcsdict[bcskey][key] : bcsval for bcskey,bcsval in iteritems(bcsdict) }
     
@@ -109,7 +122,8 @@ def bcs_dict_load(key="num"):
     
     # num is a derived key, based on date ordering
     do_num = False
-    if key=="num":
+    num_key = key
+    if key.endswith("num"):
         key = "date"
         do_num = True
     
@@ -117,7 +131,7 @@ def bcs_dict_load(key="num"):
         
     # replace date w/ num as key
     if do_num:
-        bcsdict = bcs_dict_sort(bcsdict,"num")
+        bcsdict = bcs_dict_sort(bcsdict,num_key)
         
     return bcsdict
 
@@ -279,7 +293,7 @@ def bcs_list(args):
             print(bcsitem["dir"])
     # default: print all, w/ format
     else:
-        bcsdict = bcs_dict_load("num")
+        bcsdict = bcs_dict_load("rnum" if args.reverse else "num")
         # if only listing nonexistent dirs, remove existent dirs from dict first
         if args.type or args.nonexistent or args.blocked:
             bcsdict = bcs_list_some(bcsdict,args)
@@ -382,6 +396,7 @@ def bcs(argv=None):
     parser_list.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to list (lists all by default)")
     parser_list.add_argument("-a", "--all", dest="all", action="store_true", help="list all properties for directory")
     parser_list.add_argument("-l", "--long", dest="long", action="store_true", help="use long listing (dates, labels, types)")
+    parser_list.add_argument("-r", "--reverse", dest="reverse", action="store_true", help="use reverse ordering w/ negative indices (for --long)")
     group_list = parser_list.add_mutually_exclusive_group(required=False)
     group_list.add_argument("-t", "--type", dest="type", type=str, help="list all of specified type")
     group_list.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="list only nonexistent directories")
