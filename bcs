@@ -189,13 +189,13 @@ def bcs_list_some(bcsdict, args):
 
 # print items in dict, w/ format (long):
 # N: dir    (date    label   type)
-def bcs_print_dict(bcsdict,long=False):
+def bcs_print_dict(bcsdict,long=False,reverse=False):
     # make copy w/ printable values in order
     bcsdict_rows = [[str(bcskey),
                 bcs_repr(bcsval,"dir"),
                 bcs_repr(bcsval,"date"),
                 bcs_repr(bcsval,"label"),
-                bcs_repr(bcsval,"type")] for bcskey,bcsval in sorted(iteritems(bcsdict))]
+                bcs_repr(bcsval,"type")] for bcskey,bcsval in sorted(iteritems(bcsdict),reverse=reverse)]
     # transpose to find max length for each column
     column_lengths = [max(len(row[i]) for row in bcsdict_rows) for i in range(5)]
     for row in bcsdict_rows:
@@ -299,7 +299,7 @@ def bcs_list(args):
             bcsdict = bcs_list_some(bcsdict,args)
             if len(bcsdict)==0:
                 return
-        bcs_print_dict(bcsdict,args.long)
+        bcs_print_dict(bcsdict,args.long,args.reverse)
     
 def bcs_rm(args):
     # check backup first
@@ -316,22 +316,22 @@ def bcs_rm(args):
             if d in bcsdict:
                 removed[d] = bcsdict[d]
                 bcsdict.pop(d)
-        if args.verbose: bcs_print_dict(removed)
+        if args.verbose: bcs_print_dict(removed,reverse=(key=="rnum"))
         bcs_dict_dump(bcsdict)
     # remove many by type, or any nonexistent, or any blocked
     elif args.type or args.nonexistent or args.blocked:
-        bcsdict = bcs_dict_load("num")
+        bcsdict = bcs_dict_load("rnum" if args.reverse else "num")
         removed = bcs_list_some(bcsdict,args)
         # remove all keys at once, because two dirs could block each other
         for key in removed:
             bcsdict.pop(key)
-        if args.verbose: bcs_print_dict(removed)
+        if args.verbose: bcs_print_dict(removed,reverse=args.reverse)
         bcs_dict_dump(bcsdict)
     # remove all (clear)
     elif args.all:
         if args.verbose:
-            bcsdict = bcs_dict_load()
-            bcs_print_dict(bcsdict)
+            bcsdict = bcs_dict_load("rnum" if args.reverse else "num")
+            bcs_print_dict(bcsdict,reverse=args.reverse)
         bcs_create_default_file()
 
 def bcs_update(args):
@@ -396,7 +396,7 @@ def bcs(argv=None):
     parser_list.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to list (lists all by default)")
     parser_list.add_argument("-a", "--all", dest="all", action="store_true", help="list all properties for directory")
     parser_list.add_argument("-l", "--long", dest="long", action="store_true", help="use long listing (dates, labels, types)")
-    parser_list.add_argument("-r", "--reverse", dest="reverse", action="store_true", help="use reverse ordering w/ negative indices (for --long)")
+    parser_list.add_argument("-r", "--reverse", dest="reverse", action="store_true", help="use reverse ordering w/ negative indices when listing all")
     group_list = parser_list.add_mutually_exclusive_group(required=False)
     group_list.add_argument("-t", "--type", dest="type", type=str, help="list all of specified type")
     group_list.add_argument("-n", "--nonexistent", dest="nonexistent", action="store_true", help="list only nonexistent directories")
@@ -406,6 +406,7 @@ def bcs(argv=None):
     # parser for rm
     parser_rm = subparsers.add_parser("rm")
     parser_rm.add_argument("-v", "--verbose", dest="verbose", action="store_true", help="print removed directory(s)")
+    parser_rm.add_argument("-r", "--reverse", dest="reverse", action="store_true", help="use reverse ordering w/ negative indices for verbose")
     group_rm = parser_rm.add_mutually_exclusive_group(required=True)
     group_rm.add_argument("dir", metavar="dir", type=str, nargs='*', help="#(s) or label(s) of directory(s) to remove from list", default=[])
     group_rm.add_argument("-t", "--type", dest="type", type=str, help="remove all of specified type")

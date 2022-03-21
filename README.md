@@ -121,7 +121,7 @@ optional arguments:
   -h, --help                 show this help message and exit
   -a, --all                  list all properties for directory
   -l, --long                 use long listing (dates, labels, types)
-  -r, --reverse              use reverse ordering w/ negative indices (for --long)
+  -r, --reverse              use reverse ordering w/ negative indices when listing all
   -t TYPE, --type TYPE       list all of specified type
   -n, --nonexistent          list only nonexistent directories
   -k, --blocked              list only blocked directories
@@ -137,6 +137,7 @@ positional arguments:
 optional arguments:
   -h, --help                 show this help message and exit
   -v, --verbose              print removed directory(s)
+  -r, --reverse              use reverse ordering w/ negative indices for verbose
   -t TYPE, --type TYPE       remove all of specified type
   -n, --nonexistent          remove nonexistent directories
   -k, --blocked              remove blocked directories
