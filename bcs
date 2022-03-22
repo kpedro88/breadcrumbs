@@ -190,6 +190,7 @@ def bcs_list_some(bcsdict, args):
 # print items in dict, w/ format (long):
 # N: dir    (date    label   type)
 def bcs_print_dict(bcsdict,long=False,reverse=False):
+    if len(bcsdict)==0: return
     # make copy w/ printable values in order
     bcsdict_rows = [[str(bcskey),
                 bcs_repr(bcsval,"dir"),
