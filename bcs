@@ -42,10 +42,15 @@ def bcs_check_key(key):
 # check if dir arg is number or label
 # TODO: allow mixing num, rnum, label in list of dirs
 def bcs_num_or_label(args):
+    # handle negative case
+    def smart_isdigit(arg):
+        start = 1 if arg[0]=='-' else 0
+        return arg[start:].isdigit()
+
     key = None
     if args.dir is not None:
         if isinstance(args.dir,list):
-            if all(d.isdigit() for d in args.dir):
+            if all(smart_isdigit(d) for d in args.dir):
                 args.dir = [int(d) for d in args.dir]
                 all_neg = all(d<0 for d in args.dir)
                 all_pos = all(d>=0 for d in args.dir)
@@ -60,7 +65,7 @@ def bcs_num_or_label(args):
             else:
                 raise ValueError("Can't mix num and label in list of dirs: "+','.join(args.dir))
         else:
-            if args.dir.isdigit():
+            if smart_isdigit(args.dir):
                 args.dir = int(args.dir)
                 if args.dir<0:
                     key = "rnum"
@@ -280,7 +285,7 @@ def bcs_set(args):
         raise ValueError("No item "+str(args.dir))
 
 def bcs_list(args):
-    # for specific dir, only print name: used for "go" functionality
+    # print name and optionally extra info for specific dir
     if args.dir is not None:
         key = bcs_num_or_label(args)
         bcsdict = bcs_dict_load(key)
