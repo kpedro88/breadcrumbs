@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, json, time, glob, shutil
+import sys, os, json, time, glob, shutil, re
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, RawTextHelpFormatter, RawDescriptionHelpFormatter
 
 # convenience definition
@@ -214,6 +214,54 @@ def bcs_print_dict(bcsdict,long=False,reverse=False):
             line += "  {0:<{1}}".format(row[4],column_lengths[4])
         print(line)
 
+def bcs_check_singularity(adir):
+    result = re.search("CMSSW_[0-9]*_[0-9]*_",adir)
+    if result is None:
+        return None
+
+    CMSSW_version = tuple([int(x) for x in result.group(0).split('_')[1:3]])
+
+    # somewhat inconsistent: assumes sl7 as default OS
+    # takes first version w/ any sl7 build, and last version w/ any sl7 build
+    CMSSW_transitions = [
+        ((12,5), 8),
+        ((7,6), 7),
+        ((5,3), 6),
+    ]
+    CMSSW_commands = {
+        8: "cmssw-el8",
+        7: "cmssw-cc7",
+        6: "cmssw-cc6",
+    }
+
+    CMSSW_os = None
+    for transition_version, transition_os in CMSSW_transitions:
+        if CMSSW_version >= transition_version:
+            CMSSW_os = transition_os
+            break
+
+    if CMSSW_os is None:
+        print("Unknown OS preference for CMSSW_{}_{}".format(CMSSW_version[0],CMSSW_version[1]))
+        return None
+
+    os_filename = "/etc/redhat-release"
+    if not os.path.isfile(os_filename):
+        print("Unknown OS release")
+        return None
+
+    with open(os_filename,'r') as os_file:
+        lines = os_file.read()
+        os_result = re.search("[0-9]*\\.[0-9]*",lines)
+        if os_result is None:
+            print("Could not determine OS release from:\n"+lines)
+            return None
+
+    os_version = int(os_result.group(0).split('.')[0])
+    if os_version==CMSSW_os:
+        return None
+    else:
+        return CMSSW_commands[CMSSW_os]
+
 ######################
 # external functions
 ######################
@@ -242,6 +290,8 @@ def bcs_add(args):
             shell = os.environ["SHELL"]
             shell_flag = "-csh" if "csh" in shell else "-sh"
             args.env = "eval `scramv1 runtime {}`".format(shell_flag)
+            sing_env = bcs_check_singularity(args.dir)
+            if sing_env is not None: args.env += " && "+sing_env
     bcsdict[args.dir] = {
         "dir": args.dir,
         "label": args.label if args.label is not None else args.dir,
