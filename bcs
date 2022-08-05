@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, json, time, glob, shutil, re
+import sys, os, json, time, glob, shutil, re, subprocess
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, RawTextHelpFormatter, RawDescriptionHelpFormatter
 
 # convenience definition
@@ -256,11 +256,16 @@ def bcs_check_singularity(adir):
             print("Could not determine OS release from:\n"+lines)
             return None
 
+    # in case gpu is available
+    with open(os.devnull, 'w') as DEVNULL:
+        has_gpu = subprocess.call("nvidia-smi -L", shell=True, stdout=DEVNULL, stderr=subprocess.STDOUT)==0
+    gpu_arg = " --nv" if has_gpu else ""
+
     os_version = int(os_result.group(0).split('.')[0])
     if os_version==CMSSW_os:
         return None
     else:
-        return CMSSW_commands[CMSSW_os]
+        return CMSSW_commands[CMSSW_os]+gpu_arg
 
 ######################
 # external functions
@@ -292,7 +297,7 @@ def bcs_add(args):
             args.env = "eval `scramv1 runtime {}`".format(shell_flag)
             sing_env = bcs_check_singularity(args.dir)
             # keep existing path set by cmsenv in singularity
-            if sing_env is not None: args.env += " && SINGULARITYENV_PATH=$PATH "+sing_env
+            if sing_env is not None: args.env += " && SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH "+sing_env
     bcsdict[args.dir] = {
         "dir": args.dir,
         "label": args.label if args.label is not None else args.dir,
