@@ -4,31 +4,32 @@ ECHO="echo -e"
 
 # vars and default values
 INSTALLDIR=""
-MYSHELL=$SHELL
 LOGONFILE=~/.bashrc
-if [[ $MYSHELL == *csh ]]; then
-	LOGONFILE=~/.cshrc
-fi
 VERSION=""
 ANAME=bcd
 BNAME=bgo
+ENAME=benv
+CHANGED_ENAME=""
 
 usage() {
+	EXIT=$1
+
 	$ECHO "install_bcs.sh [options]"
 	$ECHO ""
 	$ECHO "Options:"
 	$ECHO "-d        \tinstallation directory (required)"
-	$ECHO "-f        \tlogon file to install alias (default = ${LOGONFILE})"
-	$ECHO "-a        \talias name for cd + env (default = ${ANAME})"
-	$ECHO "-b        \talias name for cd (default = ${BNAME})"
+	$ECHO "-f        \tlogon file to install functions (default = ${LOGONFILE})"
+	$ECHO "-a        \tfunction name for cd + env (default = ${ANAME})"
+	$ECHO "-b        \tfunction name for cd (default = ${BNAME})"
+	$ECHO "-e        \tfunction name for CMSSW singularity env (default = ${ENAME})"
 	$ECHO "-v        \tversion of bcs to install (default = master)"
-	$ECHO "-s        \tshell (default = ${MYSHELL})"
+	$ECHO "-h        \tdisplay this message and exit"
 	
-	exit 1
+	exit $EXIT
 }
 
 # check arguments
-while getopts "d:f:a:b:v:s:" opt; do
+while getopts "d:f:a:b:e:v:h" opt; do
 	case "$opt" in
 		d) INSTALLDIR=$OPTARG
 		;;
@@ -38,16 +39,25 @@ while getopts "d:f:a:b:v:s:" opt; do
 		;;
 		b) BNAME=$OPTARG
 		;;
+		e) ENAME=$OPTARG
+		   CHANGED_ENAME=true
+		;;
 		v) VERSION="-b $OPTARG"
 		;;
-		s) MYSHELL=$OPTARG
+		h) usage 0
 		;;
 	esac
 done
 
 # check required args
 if [ -z "$INSTALLDIR" ]; then
-	usage
+	usage 1
+fi
+
+# check shell
+if [[ $SHELL == *csh ]]; then
+	$ECHO "csh is not supported"
+	exit 1
 fi
 
 # temp area
@@ -67,18 +77,17 @@ mv breadcrumbs/bcs $INSTALLDIR
 cd ..
 rm -rf bcstmp
 
-# check if already set up
-if grep ${ANAME} ${LOGONFILE} > /dev/null 2>&1; then
-	exit 0
-fi
-
-# setup alias/function
-if [[ $MYSHELL == *csh ]]; then
-	$ECHO "" >> ${LOGONFILE}
-	$ECHO "alias ${ANAME} 'eval "'"`bcs cd \!$`"'"'" >> ${LOGONFILE}
-	$ECHO "alias ${BNAME} 'eval "'"`bcs cd -g \!$`"'"'" >> ${LOGONFILE}
-else
-	$ECHO "" >> ${LOGONFILE}
+# setup functions if not already set up
+checkname() { grep $1 $2 > /dev/null 2>&1; }
+if ! checkname ${ANAME} ${LOGONFILE}; then
 	$ECHO "${ANAME}() { "'eval "$(bcs cd $1)"; }' >> ${LOGONFILE}
+fi
+if ! checkname ${BNAME} ${LOGONFILE}; then
 	$ECHO "${BNAME}() { "'eval "$(bcs cd -g $1)"; }' >> ${LOGONFILE}
+fi
+if ! checkname ${ENAME} ${LOGONFILE}; then
+	$ECHO "${ENAME}() { "'eval `scramv1 runtime -sh` && /bin/bash; }' >> ${LOGONFILE}
+fi
+if [ -n "$CHANGED_ENAME" ]; then
+	sed -i 's/benv/'$ENAME' $INSTALLDIR/bcs
 fi

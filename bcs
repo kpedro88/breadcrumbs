@@ -265,7 +265,8 @@ def bcs_check_singularity(adir):
     if os_version==CMSSW_os:
         return None
     else:
-        return CMSSW_commands[CMSSW_os]+gpu_arg
+        # combine cmsenv and shell launch in function benv
+        return CMSSW_commands[CMSSW_os]+gpu_arg+" benv"
 
 ######################
 # external functions
@@ -296,8 +297,7 @@ def bcs_add(args):
             shell_flag = "-csh" if "csh" in shell else "-sh"
             args.env = "eval `scramv1 runtime {}`".format(shell_flag)
             sing_env = bcs_check_singularity(args.dir)
-            # keep existing path set by cmsenv in singularity
-            if sing_env is not None: args.env += " && SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH "+sing_env
+            if sing_env is not None: args.env = sing_env
     bcsdict[args.dir] = {
         "dir": args.dir,
         "label": args.label if args.label is not None else args.dir,

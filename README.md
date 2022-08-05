@@ -1,6 +1,6 @@
 # breadcrumbs
 
-A simple script to keep track of working directories.
+A simple script to keep track of working directories in `bash`.
 Intended as a lightweight alternative to screen/tmux
 for developers working on a number of projects
 with different directories/environments.
@@ -8,7 +8,7 @@ with different directories/environments.
 ## Installation
 
 The installation script downloads the `bcs` script, installs it in the specified directory,
-and adds the required alias or function to the logon file (see below).
+and adds the required functions to the logon file (see below).
 
 ```
 wget https://raw.githubusercontent.com/kpedro88/breadcrumbs/master/install_bcs.sh
@@ -19,11 +19,12 @@ chmod +x install_bcs.sh
 Installation script options:
 ```
 -d          installation directory (required)
--f          logon file to install alias (default = ~/.bashrc or ~/.cshrc)
--a          alias name for cd + env (default = bcd)
--b          alias name for cd (default = bgo)
+-f          logon file to install functions (default = ~/.bashrc)
+-a          function name for cd + env (default = bcd)
+-b          function name for cd (default = bgo)
+-e          function name for CMSSW singularity env (default = benv)
 -v          version of bcs to install (default = master)
--s          shell (default = $SHELL)
+-h          print this message and exit
 ```
 
 ## Usage
@@ -45,8 +46,12 @@ The unique labels can be used as keywords if the user does not want to keep trac
 the automatic numbering in the list.
 
 When adding a directory, the environment command will be automatically populated with
-``eval `scramv1 runtime -sh`​`` (or `-csh`, depending on the user shell)
+``eval `scramv1 runtime -sh`​``
 if the directory name contains "CMSSW". This can be disabled using the `-E` flag.
+If Singularity is needed for a given CMSSW version (determined by checking the base OS),
+the environment command will launch the appropriate container (with GPU support, if possible),
+and call the above CMSSW environment command.
+This is accomplished by a bash function `benv`.
 
 A directory in the list can block other related directories from being added to the list.
 By default, blocking is not enabled. A directory with a block level of 0 will block any of its subdirectories.
@@ -56,21 +61,18 @@ while a block level of 2 would block all other subdirectories of `/A/B`.
 
 Examples of the above:
 
-`.login`:
-```
-bcs list -l
+`.bash_login`:
+```bash
+if type bcs >& /dev/null; then
+	bcs list -l
+fi
 ```
 
-`.logout`: (with automatic `cmsenv` detection)
-```
-if ( $PWD !~ $HOME ) then
-	if ( $PWD =~ *CMSSW_* ) then
-		set BCSENV='-e eval `scramv1 runtime -csh`'
-	else
-		set BCSENV=''
-	endif
-	bcs add -t auto "$BCSENV"
-endif
+`.bash_logout`:
+```bash
+if type bcs >& /dev/null && [ "$PWD" != "$HOME" ] && [ "$PWD" != "$(readlink $HOME)" ]; then
+	bcs add -t auto
+fi
 ```
 
 ## Commands
@@ -182,5 +184,5 @@ positional arguments:
   dir                        # or label of directory to cd
 ```
 
-Due to shell limitations, `bcd` and `bgo` are implemented as aliases for tcsh and functions for bash.
-The aliases/functions can be renamed by the installation script.
+The commands `bcd` and `bgo` are implemented as functions in bash.
+They can be renamed by the installation script.
