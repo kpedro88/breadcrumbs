@@ -22,7 +22,7 @@ Installation script options:
 -f          logon file to install functions (default = ~/.bashrc)
 -a          function name for cd + env (default = bcd)
 -b          function name for cd (default = bgo)
--e          function name for CMSSW singularity env (default = benv)
+-e          script name for CMSSW singularity env (default = benv)
 -v          version of bcs to install (default = master)
 -h          print this message and exit
 ```
@@ -51,7 +51,7 @@ if the directory name contains "CMSSW". This can be disabled using the `-E` flag
 If Singularity is needed for a given CMSSW version (determined by checking the base OS),
 the environment command will launch the appropriate container (with GPU support, if possible),
 and call the above CMSSW environment command.
-This is accomplished by a bash function `benv`.
+This is accomplished by a bash script `benv` that is created by the installation script.
 
 A directory in the list can block other related directories from being added to the list.
 By default, blocking is not enabled. A directory with a block level of 0 will block any of its subdirectories.

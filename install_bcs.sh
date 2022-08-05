@@ -21,7 +21,7 @@ usage() {
 	$ECHO "-f        \tlogon file to install functions (default = ${LOGONFILE})"
 	$ECHO "-a        \tfunction name for cd + env (default = ${ANAME})"
 	$ECHO "-b        \tfunction name for cd (default = ${BNAME})"
-	$ECHO "-e        \tfunction name for CMSSW singularity env (default = ${ENAME})"
+	$ECHO "-e        \tscript name for CMSSW singularity env (default = ${ENAME})"
 	$ECHO "-v        \tversion of bcs to install (default = master)"
 	$ECHO "-h        \tdisplay this message and exit"
 	
@@ -85,8 +85,14 @@ fi
 if ! checkname ${BNAME} ${LOGONFILE}; then
 	$ECHO "${BNAME}() { "'eval "$(bcs cd -g $1)"; }' >> ${LOGONFILE}
 fi
-if ! checkname ${ENAME} ${LOGONFILE}; then
-	$ECHO "${ENAME}() { "'/bin/bash && eval `scramv1 runtime -sh`; }' >> ${LOGONFILE}
+
+# setup singularity env script
+if ! type ${ENAME}; then
+	cat << EOF > ${INSTALLDIR}/${ENAME}
+#!/bin/bash
+/bin/bash && eval `scramv1 runtime -sh`
+EOF
+	chmod +x ${INSTALLDIR}/${ENAME}
 fi
 if [ -n "$CHANGED_ENAME" ]; then
 	sed -i 's/benv/'$ENAME'/' $INSTALLDIR/bcs
