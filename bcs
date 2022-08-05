@@ -291,7 +291,8 @@ def bcs_add(args):
             shell_flag = "-csh" if "csh" in shell else "-sh"
             args.env = "eval `scramv1 runtime {}`".format(shell_flag)
             sing_env = bcs_check_singularity(args.dir)
-            if sing_env is not None: args.env += " && "+sing_env
+            # keep existing path set by cmsenv in singularity
+            if sing_env is not None: args.env += " && SINGULARITYENV_PATH=$PATH "+sing_env
     bcsdict[args.dir] = {
         "dir": args.dir,
         "label": args.label if args.label is not None else args.dir,
