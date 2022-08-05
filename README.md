@@ -45,7 +45,7 @@ The unique labels can be used as keywords if the user does not want to keep trac
 the automatic numbering in the list.
 
 When adding a directory, the environment command will be automatically populated with
-``eval `scramv1 runtime -sh``` (or `-csh`, depending on the user shell)
+``eval `scramv1 runtime -sh`​`` (or `-csh`, depending on the user shell)
 if the directory name contains "CMSSW". This can be disabled using the `-E` flag.
 
 A directory in the list can block other related directories from being added to the list.
