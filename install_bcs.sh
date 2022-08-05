@@ -87,10 +87,10 @@ if ! checkname ${BNAME} ${LOGONFILE}; then
 fi
 
 # setup singularity env script
-if ! type ${ENAME}; then
-	cat << EOF > ${INSTALLDIR}/${ENAME}
+if ! type ${ENAME} > /dev/null 2>&1; then
+	cat << 'EOF' > ${INSTALLDIR}/${ENAME}
 #!/bin/bash
-/bin/bash && eval `scramv1 runtime -sh`
+eval `scramv1 runtime -sh` && /bin/bash
 EOF
 	chmod +x ${INSTALLDIR}/${ENAME}
 fi
