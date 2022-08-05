@@ -266,7 +266,7 @@ def bcs_check_singularity(adir):
         return None
     else:
         # combine cmsenv and shell launch in function benv
-        return CMSSW_commands[CMSSW_os]+gpu_arg+" benv"
+        return CMSSW_commands[CMSSW_os]+gpu_arg+" -- benv"
 
 ######################
 # external functions

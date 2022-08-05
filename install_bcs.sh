@@ -86,8 +86,8 @@ if ! checkname ${BNAME} ${LOGONFILE}; then
 	$ECHO "${BNAME}() { "'eval "$(bcs cd -g $1)"; }' >> ${LOGONFILE}
 fi
 if ! checkname ${ENAME} ${LOGONFILE}; then
-	$ECHO "${ENAME}() { "'eval `scramv1 runtime -sh` && /bin/bash; }' >> ${LOGONFILE}
+	$ECHO "${ENAME}() { "'/bin/bash && eval `scramv1 runtime -sh`; }' >> ${LOGONFILE}
 fi
 if [ -n "$CHANGED_ENAME" ]; then
-	sed -i 's/benv/'$ENAME' $INSTALLDIR/bcs
+	sed -i 's/benv/'$ENAME'/' $INSTALLDIR/bcs
 fi
