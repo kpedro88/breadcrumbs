@@ -219,30 +219,42 @@ def bcs_check_singularity(adir):
     if result is None:
         return None
 
-    CMSSW_version = tuple([int(x) for x in result.group(0).split('_')[1:3]])
+    # get SCRAM_ARCH
+    adirbase = adir[:]
+    slash = adir.find("/", result.end())
+    if slash>=0:
+        adirbase = adir[:slash]
+    scram_paths = glob.glob(adirbase+"/lib/*")
+    if len(scram_paths)==0:
+        print("Can't find SCRAM_ARCH for dir {}".format(adirbase))
+        return None
+    scram_path = scram_paths[0]
+    scram_arch = scram_path.split("/")[-1]
+    scram_os = scram_arch.split("_")[0]
 
-    # somewhat inconsistent: assumes sl7 as default OS
-    # takes first version w/ any sl7 build, and last version w/ any sl7 build
-    CMSSW_transitions = [
-        ((12,5), 8),
-        ((7,6), 7),
-        ((5,3), 6),
-    ]
+    # map known SCRAM_ARCH values to OS numbers
+    # (explicit map rather than parsing in case of weird values, future changes in # digits, etc.)
+    SCRAM_to_OS = {
+        "slc5": 5,
+        "slc6": 6,
+        "slc7": 7,
+        "cc8": 8,
+        "cs8": 8,
+        "el8": 8,
+        "el9": 9,
+    }
     CMSSW_commands = {
+        9: "cmssw-el9",
         8: "cmssw-el8",
-        7: "cmssw-cc7",
-        6: "cmssw-cc6",
+        7: "cmssw-el7",
+        6: "cmssw-el6",
+        5: "cmssw-el5",
     }
 
-    CMSSW_os = None
-    for transition_version, transition_os in CMSSW_transitions:
-        if CMSSW_version >= transition_version:
-            CMSSW_os = transition_os
-            break
-
-    if CMSSW_os is None:
-        print("Unknown OS preference for CMSSW_{}_{}".format(CMSSW_version[0],CMSSW_version[1]))
+    if scram_os not in SCRAM_to_OS:
+        print("Unknown OS for SCRAM_ARCH {}".format(scram_arch))
         return None
+    CMSSW_os = SCRAM_to_OS[scram_os]
 
     os_filename = "/etc/redhat-release"
     if not os.path.isfile(os_filename):
