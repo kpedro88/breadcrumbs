@@ -249,13 +249,8 @@ def bcs_check_apptainer(adir):
         return None
     CMSSW_os = SCRAM_to_OS[scram_os]
 
-    # in case gpu is available
-    with open(os.devnull, 'w') as DEVNULL:
-        has_gpu = subprocess.call("nvidia-smi -L", shell=True, stdout=DEVNULL, stderr=subprocess.STDOUT)==0
-    gpu_arg = " --nv" if has_gpu else ""
-
     # always use benv: automatically uses apptainer if current OS is different from CMSSW OS
-    return "benv --os {}{}".format(CMSSW_os,gpu_arg)
+    return "benv --os {}".format(CMSSW_os)
 
 ######################
 # external functions

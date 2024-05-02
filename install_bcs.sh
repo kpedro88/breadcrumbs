@@ -72,10 +72,17 @@ if [ -f ~/.breadcrumbs ]; then
 	breadcrumbs/bcs update -b
 fi
 
-# install program
+# install programs
 mv breadcrumbs/bcs $INSTALLDIR
+mv breadcrumbs/benv ${INSTALLDIR}/${ENAME}
 cd ..
 rm -rf bcstmp
+
+# handle apptainer env script name
+chmod +x ${INSTALLDIR}/${ENAME}
+if [ -n "$CHANGED_ENAME" ]; then
+	sed -i 's/benv/'$ENAME'/' $INSTALLDIR/bcs
+fi
 
 # setup functions if not already set up
 checkname() { grep $1 $2 > /dev/null 2>&1; }
@@ -84,11 +91,4 @@ if ! checkname ${ANAME} ${LOGONFILE}; then
 fi
 if ! checkname ${BNAME} ${LOGONFILE}; then
 	$ECHO "${BNAME}() { "'eval "$(bcs cd -g $1)"; }' >> ${LOGONFILE}
-fi
-
-# install apptainer env script
-mv breadcrumbs/benv ${INSTALLDIR}/${ENAME}
-chmod +x ${INSTALLDIR}/${ENAME}
-if [ -n "$CHANGED_ENAME" ]; then
-	sed -i 's/benv/'$ENAME'/' $INSTALLDIR/bcs
 fi

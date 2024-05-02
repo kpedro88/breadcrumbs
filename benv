@@ -51,6 +51,10 @@ OS_VERSION=$(sed -nr 's/[^0-9]*([0-9]+).*/\1/p' /etc/redhat-release)
 # only run Apptainer if desired OS is specified and not equal to current OS
 if [ -n "$OS_DESIRED" ]; then
 	if [ "$OS_DESIRED" != "$OS_VERSION" ]; then
+		# check for GPU
+		if nvidia-smi -L >& /dev/null; then
+			$ARGS="$ARGS --nv"
+		fi
 		${CMSSW_COMMANDS[$OS_DESIRED]} $ARGS -- $0
 	else
 		eval `scramv1 runtime -sh`
