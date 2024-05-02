@@ -86,14 +86,9 @@ if ! checkname ${BNAME} ${LOGONFILE}; then
 	$ECHO "${BNAME}() { "'eval "$(bcs cd -g $1)"; }' >> ${LOGONFILE}
 fi
 
-# setup singularity env script
-if ! type ${ENAME} > /dev/null 2>&1; then
-	cat << 'EOF' > ${INSTALLDIR}/${ENAME}
-#!/bin/bash
-eval `scramv1 runtime -sh` && /bin/bash
-EOF
-	chmod +x ${INSTALLDIR}/${ENAME}
-fi
+# install apptainer env script
+mv breadcrumbs/benv ${INSTALLDIR}/${ENAME}
+chmod +x ${INSTALLDIR}/${ENAME}
 if [ -n "$CHANGED_ENAME" ]; then
 	sed -i 's/benv/'$ENAME'/' $INSTALLDIR/bcs
 fi

@@ -214,24 +214,7 @@ def bcs_print_dict(bcsdict,long=False,reverse=False):
             line += "  {0:<{1}}".format(row[4],column_lengths[4])
         print(line)
 
-def bcs_check_OS():
-    os_filename = "/etc/redhat-release"
-    if not os.path.isfile(os_filename):
-        print("Unknown OS release")
-        return None
-
-    with open(os_filename,'r') as os_file:
-        lines = os_file.read()
-        # capture 1-more digits followed by either a period or a space
-        os_result = re.search(r"([0-9]+)(?:\.| )",lines)
-        if os_result is None:
-            print("Could not determine OS release from:\n"+lines)
-            return None
-
-    os_version = int(os_result.group(0))
-    return os_version
-
-def bcs_check_singularity(adir):
+def bcs_check_apptainer(adir):
     result = re.search("CMSSW_[0-9]*_[0-9]*_",adir)
     if result is None:
         return None
@@ -260,13 +243,6 @@ def bcs_check_singularity(adir):
         "el8": 8,
         "el9": 9,
     }
-    CMSSW_commands = {
-        9: "cmssw-el9",
-        8: "cmssw-el8",
-        7: "cmssw-el7",
-        6: "cmssw-el6",
-        5: "cmssw-el5",
-    }
 
     if scram_os not in SCRAM_to_OS:
         print("Unknown OS for SCRAM_ARCH {}".format(scram_arch))
@@ -278,12 +254,8 @@ def bcs_check_singularity(adir):
         has_gpu = subprocess.call("nvidia-smi -L", shell=True, stdout=DEVNULL, stderr=subprocess.STDOUT)==0
     gpu_arg = " --nv" if has_gpu else ""
 
-    os_version = bcs_check_OS()
-    if os_version==CMSSW_os:
-        return None
-    else:
-        # combine cmsenv and shell launch in function benv
-        return CMSSW_commands[CMSSW_os]+gpu_arg+" -- benv"
+    # always use benv: automatically uses apptainer if current OS is different from CMSSW OS
+    return "benv --os {}{}".format(CMSSW_os,gpu_arg)
 
 ######################
 # external functions
@@ -310,11 +282,7 @@ def bcs_add(args):
     # automatic environment setting
     if args.env is None and not args.no_auto_env:
         if "CMSSW" in args.dir:
-            shell = os.environ["SHELL"]
-            shell_flag = "-csh" if "csh" in shell else "-sh"
-            args.env = "eval `scramv1 runtime {}`".format(shell_flag)
-            sing_env = bcs_check_singularity(args.dir)
-            if sing_env is not None: args.env = sing_env
+            args.env = bcs_check_apptainer(args.dir)
     bcsdict[args.dir] = {
         "dir": args.dir,
         "label": args.label if args.label is not None else args.dir,

@@ -1,0 +1,62 @@
+#!/bin/bash
+
+case `uname` in
+	Linux|CYGWIN*) ECHO="echo -e" ;;
+	*) ECHO="echo" ;;
+esac
+
+ARGS=
+OS_DESIRED=
+declare -A CMSSW_COMMANDS
+CMSSW_COMMANDS[9]=cmssw-el9
+CMSSW_COMMANDS[8]=cmssw-el8
+CMSSW_COMMANDS[7]=cmssw-el7
+CMSSW_COMMANDS[6]=cmssw-el6
+CMSSW_COMMANDS[5]=cmssw-el5
+
+usage() {
+	$ECHO "benv [benv options] [apptainer options]"
+	$ECHO
+	$ECHO "Options:"
+	$ECHO "--os [num]   \tdesired OS version for environment; allowed values: ${!CMSSW_COMMANDS[@]}"
+	$ECHO "--help       \tdisplay this message and exit"
+	$ECHO "all other arguments will be passed to Apptainer (if --os does not match current OS)"
+	exit $1
+}
+
+while [ $# -gt 0 ]; do
+	case $1 in
+		--os)
+			OS_DESIRED="$2"
+			shift; shift
+		;;
+		--help)
+			usage 0
+			shift
+		;;
+		-*)
+			ARGS="$ARGS $1"
+			shift
+		;;
+	esac
+done
+
+if ! [[ "${!CMSSW_COMMANDS[@]}" =~ "$OS_DESIRED" ]]; then
+	$ECHO "Unknown OS value $OS_DESIRED"
+	usage 1
+fi
+
+OS_VERSION=$(sed -nr 's/[^0-9]*([0-9]+).*/\1/p' /etc/redhat-release)
+
+# only run Apptainer if desired OS is specified and not equal to current OS
+if [ -n "$OS_DESIRED" ]; then
+	if [ "$OS_DESIRED" != "$OS_VERSION" ]; then
+		${CMSSW_COMMANDS[$OS_DESIRED]} $ARGS -- $0
+	else
+		eval `scramv1 runtime -sh`
+	fi
+else
+	# this is what runs when benv is the final argument to Apptainer
+	source /cvmfs/cms.cern.ch/cmsset_default.sh
+	eval `scramv1 runtime -sh` && /bin/bash
+fi
