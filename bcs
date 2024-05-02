@@ -395,6 +395,8 @@ def bcs_update(args):
         for prop in new_properties:
             if prop not in bcsdict[bcskey]:
                 bcsdict[bcskey][prop] = new_properties[prop]
+        if "CMSSW" in bcsdict[bcskey]["dir"]:
+            bcsdict[bcskey]["env"] = bcs_check_apptainer(bcsdict[bcskey]["dir"])
     bcs_dict_dump(bcsdict)
 
 def bcs_cd(args):
