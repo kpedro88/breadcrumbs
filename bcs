@@ -214,6 +214,23 @@ def bcs_print_dict(bcsdict,long=False,reverse=False):
             line += "  {0:<{1}}".format(row[4],column_lengths[4])
         print(line)
 
+def bcs_check_OS():
+    os_filename = "/etc/redhat-release"
+    if not os.path.isfile(os_filename):
+        print("Unknown OS release")
+        return None
+
+    with open(os_filename,'r') as os_file:
+        lines = os_file.read()
+        # capture 1-more digits followed by either a period or a space
+        os_result = re.search(r"([0-9]+)(?:\.| )",lines)
+        if os_result is None:
+            print("Could not determine OS release from:\n"+lines)
+            return None
+
+    os_version = int(os_result.group(0))
+    return os_version
+
 def bcs_check_singularity(adir):
     result = re.search("CMSSW_[0-9]*_[0-9]*_",adir)
     if result is None:
@@ -256,24 +273,12 @@ def bcs_check_singularity(adir):
         return None
     CMSSW_os = SCRAM_to_OS[scram_os]
 
-    os_filename = "/etc/redhat-release"
-    if not os.path.isfile(os_filename):
-        print("Unknown OS release")
-        return None
-
-    with open(os_filename,'r') as os_file:
-        lines = os_file.read()
-        os_result = re.search("[0-9]*\\.[0-9]*",lines)
-        if os_result is None:
-            print("Could not determine OS release from:\n"+lines)
-            return None
-
     # in case gpu is available
     with open(os.devnull, 'w') as DEVNULL:
         has_gpu = subprocess.call("nvidia-smi -L", shell=True, stdout=DEVNULL, stderr=subprocess.STDOUT)==0
     gpu_arg = " --nv" if has_gpu else ""
 
-    os_version = int(os_result.group(0).split('.')[0])
+    os_version = bcs_check_OS()
     if os_version==CMSSW_os:
         return None
     else:
