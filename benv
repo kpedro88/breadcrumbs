@@ -7,6 +7,7 @@ esac
 
 ARGS=
 OS_DESIRED=
+FORCE_GPU=2 # default value, implies auto detection
 declare -A CMSSW_COMMANDS
 CMSSW_COMMANDS[9]=cmssw-el9
 CMSSW_COMMANDS[8]=cmssw-el8
@@ -19,6 +20,7 @@ usage() {
 	$ECHO
 	$ECHO "Options:"
 	$ECHO "--os [num]   \tdesired OS version for environment; allowed values: ${!CMSSW_COMMANDS[@]}"
+	$ECHO "--gpu [bool] \tmanually enable or disable --nv flag for Apptainer (overrides automatic detection)"
 	$ECHO "--help       \tdisplay this message and exit"
 	$ECHO "all other arguments will be passed to Apptainer (if --os does not match current OS)"
 	exit $1
@@ -28,6 +30,10 @@ while [ $# -gt 0 ]; do
 	case $1 in
 		--os)
 			OS_DESIRED="$2"
+			shift; shift
+		;;
+		--gpu)
+			FORCE_GPU="$2"
 			shift; shift
 		;;
 		--help)
@@ -46,14 +52,19 @@ if ! [[ "${!CMSSW_COMMANDS[@]}" =~ "$OS_DESIRED" ]]; then
 	usage 1
 fi
 
+if [ -n "$FORCE_GPU" ] && ! [[ "0 1 2" =~ "$FORCE_GPU" ]]; then
+	$ECHO "Unknown GPU value $FORCE_GPU"
+	usage 1
+fi
+
 OS_VERSION=$(sed -nr 's/[^0-9]*([0-9]+).*/\1/p' /etc/redhat-release)
 
 # only run Apptainer if desired OS is specified and not equal to current OS
 if [ -n "$OS_DESIRED" ]; then
 	if [ "$OS_DESIRED" != "$OS_VERSION" ]; then
 		# check for GPU
-		if nvidia-smi -L >& /dev/null; then
-			$ARGS="$ARGS --nv"
+		if [ "$FORCE_GPU" -eq 1 ] || ( [ "$FORCE_GPU" -ne 0 ] && nvidia-smi -L >& /dev/null); then
+			ARGS="$ARGS --nv"
 		fi
 		${CMSSW_COMMANDS[$OS_DESIRED]} $ARGS -- $0
 	else
