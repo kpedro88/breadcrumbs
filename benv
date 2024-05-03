@@ -66,9 +66,10 @@ if [ -n "$OS_DESIRED" ]; then
 		if [ "$FORCE_GPU" -eq 1 ] || ( [ "$FORCE_GPU" -ne 0 ] && nvidia-smi -L >& /dev/null); then
 			ARGS="$ARGS --nv"
 		fi
-		${CMSSW_COMMANDS[$OS_DESIRED]} $ARGS -- $0
+		echo "${CMSSW_COMMANDS[$OS_DESIRED]} $ARGS -- $0"
 	else
-		eval `scramv1 runtime -sh`
+		# eval called by bcd, not here
+		scramv1 runtime -sh
 	fi
 else
 	# this is what runs when benv is the final argument to Apptainer

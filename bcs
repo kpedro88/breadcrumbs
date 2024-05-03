@@ -250,7 +250,7 @@ def bcs_check_apptainer(adir):
     CMSSW_os = SCRAM_to_OS[scram_os]
 
     # always use benv: automatically uses apptainer if current OS is different from CMSSW OS
-    return "benv --os {}".format(CMSSW_os)
+    return "eval `benv --os {}`".format(CMSSW_os)
 
 ######################
 # external functions
