@@ -40,7 +40,7 @@ while [ $# -gt 0 ]; do
 			usage 0
 			shift
 		;;
-		-*)
+		*)
 			ARGS="$ARGS $1"
 			shift
 		;;
