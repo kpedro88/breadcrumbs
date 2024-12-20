@@ -87,7 +87,7 @@ fi
 # setup functions if not already set up
 checkname() { grep $1 $2 > /dev/null 2>&1; }
 if ! checkname ${ANAME} ${LOGONFILE}; then
-	$ECHO "${ANAME}() { "'eval "$(bcs cd $1)"; }' >> ${LOGONFILE}
+	$ECHO "${ANAME}() { "'eval "$(bcs cd $1 ${2:+'-r '}${2})"; }' >> ${LOGONFILE}
 fi
 if ! checkname ${BNAME} ${LOGONFILE}; then
 	$ECHO "${BNAME}() { "'eval "$(bcs cd -g $1)"; }' >> ${LOGONFILE}

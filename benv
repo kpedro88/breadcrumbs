@@ -9,6 +9,7 @@ ARGS=
 OS_DESIRED=
 FORCE_GPU=2 # default value, implies auto detection
 CMD='scramv1 runtime -sh'
+RUN='/bin/bash'
 declare -A CMSSW_COMMANDS
 CMSSW_COMMANDS[9]=cmssw-el9
 CMSSW_COMMANDS[8]=cmssw-el8
@@ -23,6 +24,7 @@ usage() {
 	$ECHO "--os [num]   \tdesired OS version for environment; allowed values: ${!CMSSW_COMMANDS[@]}"
 	$ECHO "--gpu [bool] \tmanually enable or disable --nv flag for Apptainer (overrides automatic detection)"
 	$ECHO "--cmd [cmd]  \tlocal environment command (default: $CMD)"
+	$ECHO "--run [run]  \tcommand to run (default: $RUN)"
 	$ECHO "--help       \tdisplay this message and exit"
 	$ECHO "all other arguments will be passed to Apptainer (if --os does not match current OS)"
 	exit $1
@@ -40,6 +42,10 @@ while [ $# -gt 0 ]; do
 		;;
 		--cmd)
 			CMD="$2"
+			shift; shift
+		;;
+		--run)
+			RUN="$2"
 			shift; shift
 		;;
 		--help)
@@ -71,7 +77,11 @@ if [ -n "$OS_DESIRED" ]; then
 		if [ "$FORCE_GPU" -eq 1 ] || ( [ "$FORCE_GPU" -ne 0 ] && nvidia-smi -L >& /dev/null); then
 			ARGS="$ARGS --nv"
 		fi
-		echo "${CMSSW_COMMANDS[$OS_DESIRED]} $ARGS -- $0 --cmd '$CMD'"
+		RUN_ARG=""
+		if [ -n "$RUN" ]; then
+			RUN_ARG="--run $RUN"
+		fi
+		echo "${CMSSW_COMMANDS[$OS_DESIRED]} $ARGS -- $0 --cmd '$CMD' $RUN_ARG"
 	else
 		# eval called by bcd, not here
 		$CMD
@@ -79,5 +89,5 @@ if [ -n "$OS_DESIRED" ]; then
 else
 	# this is what runs when benv is the final argument to Apptainer
 	source /cvmfs/cms.cern.ch/cmsset_default.sh
-	eval `$CMD` && /bin/bash
+	eval `$CMD` && $RUN
 fi
