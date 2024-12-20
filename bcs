@@ -391,7 +391,7 @@ def bcs_cd(args):
     if not args.go and len(bcsitem["env"])>0:
         env_str = bcsitem["env"]
         if len(args.run)>0:
-            env_str = env_str.replace("benv", "benv --run "+args.run) if "benv" in env_str else env_str+" "+args.run
+            env_str = env_str.replace("benv", "benv --run "+'"'+args.run+'"') if "benv" in env_str else env_str+" && "+args.run
         line += " && "+env_str
     print(line)
 

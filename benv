@@ -79,7 +79,7 @@ if [ -n "$OS_DESIRED" ]; then
 		fi
 		RUN_ARG=""
 		if [ -n "$RUN" ]; then
-			RUN_ARG="--run $RUN"
+			RUN_ARG="--run '$RUN'"
 		fi
 		echo "${CMSSW_COMMANDS[$OS_DESIRED]} $ARGS -- $0 --cmd '$CMD' $RUN_ARG"
 	else
