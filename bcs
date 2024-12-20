@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, os, json, time, glob, shutil, re, subprocess
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, RawTextHelpFormatter, RawDescriptionHelpFormatter
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, RawTextHelpFormatter, RawDescriptionHelpFormatter, SUPPRESS
 
 # convenience definition
 # (from ConfigArgParse)
@@ -390,7 +390,7 @@ def bcs_cd(args):
     line = 'cd "'+bcsitem["dir"]+'"'
     if not args.go and len(bcsitem["env"])>0:
         env_str = bcsitem["env"]
-        if len(args.run)>0:
+        if args.run is not None:
             env_str = env_str.replace("benv", "benv --run "+'"'+args.run+'"') if "benv" in env_str else env_str+" && "+args.run
         line += " && "+env_str
     print(line)
@@ -454,6 +454,7 @@ def bcs(argv=None):
     # parse for cd
     parser_cd = subparsers.add_parser("cd")
     parser_cd.add_argument("dir", metavar="dir", type=str, nargs='?', help="# or label of directory to cd")
+    parser_cd.add_argument("null", nargs='*', help=SUPPRESS) # swallow any fake arguments at the end (from empty --run)
     parser_cd.add_argument("-g", "--go", dest="go", action="store_true", help="go to directory without setting env")
     parser_cd.add_argument("-r", "--run", dest="run", type=str, help="command to run")
     parser_cd.set_defaults(func=bcs_cd)
