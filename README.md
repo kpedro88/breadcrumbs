@@ -155,8 +155,9 @@ positional arguments:
   dir         # or label of directory to cd
 
 optional arguments:
-  -h, --help  show this help message and exit
-  -g, --go    go to directory without setting env
+  -h, --help         show this help message and exit
+  -g, --go           go to directory without setting env
+  -r RUN, --run RUN  command to run
 ```
 
 `bcs update`: used at installation for compatibility with schema changes
@@ -174,6 +175,7 @@ usage: bcd [dir]
 
 positional arguments:
   dir                        # or label of directory to cd
+  run                        command to run (optional)
 ```
 
 `bgo`: (cd, don't set env)
